@@ -1,0 +1,48 @@
+:root {
+  --bg: #1f2430;
+  --ink: #f1ede4;
+  --quiet: #a9a59b;
+  --barren: #5b4f45;
+  --grass: #6f9a5a;
+  --line: #2b303c;
+  --accent: #e0b85a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  line-height: 1.6;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+h1 { margin: 0 0 8px; font-size: 1.8rem; letter-spacing: 0.04em; }
+.lead { margin: 0 0 4px; }
+.note, .version { color: var(--quiet); font-size: 0.9rem; }
+
+.stages { display: flex; gap: 8px; margin: 16px 0; }
+.stages button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--quiet);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.stages button[aria-pressed="true"] { border-color: var(--accent); background: rgb(224 184 90 / 0.15); }
+
+#island { display: block; width: 100%; height: auto; }
+.cell { stroke: var(--line); stroke-width: 1.5; }
+.cell.open { fill: var(--barren); }
+.cell.open.s0 { fill: var(--grass); }
+.cell.closed { fill: none; stroke: var(--quiet); stroke-dasharray: 3 3; opacity: 0.5; }

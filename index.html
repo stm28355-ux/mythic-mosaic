@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mythic Mosaic</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app">
+  <h1>Mythic Mosaic</h1>
+  <p class="lead">枯れた土地に六角の地形を敷くと、幻の生き物が住みつき、土地をさらに変えていく。</p>
+  <p class="note">いまは作り始めたところ（工程0：土台）。下は箱庭の島の広がり方の見本。</p>
+  <div class="stages" role="group" aria-label="島の段">
+    <button type="button" data-stage="0">19マス</button>
+    <button type="button" data-stage="1">37マス</button>
+    <button type="button" data-stage="2">61マス</button>
+  </div>
+  <svg id="island" role="img" aria-label="箱庭の島"></svg>
+  <p class="version">版 <span id="version"></span></p>
+</main>
+<script type="module" src="src/ui/main.js"></script>
+</body>
+</html>
