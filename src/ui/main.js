@@ -119,6 +119,14 @@ async function onCell(k) {
   history.push(before);
   if (history.length > HISTORY_MAX) history.shift();
   chainEl.textContent = '';
+  if (result.released) {
+    state.board = result.board;
+    say([`${byId[result.released].name}が帰っていった（図鑑には残る）`]);
+    busy = false;
+    save();
+    render({ flash: new Set([k]) });
+    return;
+  }
 
   // 段ごとに見せる
   render({ placed: k });

@@ -156,6 +156,7 @@ export function whyNotPlace(board, q, r, itemId, foundCount = Infinity) {
   const item = PLACEABLES.find((p) => p.id === itemId);
   if (!item) return '知らない物';
   if (foundCount < item.unlockAt) return 'まだ使えない';
+  if (item.kind === 'release') return c.creature ? null : '生き物がいない';
   if (c.creature) return '生き物が住んでいる';
   if (item.kind === 'ground' && c.ground === item.ground && c.object === null) return '同じ地面';
   if (item.kind === 'raise' && c.height >= MAX_HEIGHT) return 'これ以上高くできない';
@@ -172,6 +173,11 @@ export function place(board, q, r, itemId, { catalog = CREATURES, foundCount = I
   const item = PLACEABLES.find((p) => p.id === itemId);
   const k = key(q, r);
   const c = board.cells[k];
+  // 帰す：生き物だけがいなくなる。地面は変わらないので連鎖は起こさない
+  if (item.kind === 'release') {
+    const released = { ...board, cells: { ...board.cells, [k]: { ...c, creature: null } } };
+    return { board: released, placedBoard: released, steps: [], released: c.creature };
+  }
   const next = item.kind === 'ground'
     ? { ...c, ground: item.ground, object: null }
     : { ...c, height: c.height + 1 };

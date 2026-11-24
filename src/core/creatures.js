@@ -32,6 +32,8 @@ export const PLACEABLES = Object.freeze([
   { id: 'water', name: '水', kind: 'ground', ground: 'water', unlockAt: 0 },
   { id: 'sand', name: '砂', kind: 'ground', ground: 'sand', unlockAt: 0 },
   { id: 'hill', name: '丘', kind: 'raise', unlockAt: 3 },
+  // 帰す（Issue #1）：生き物を島から帰す。地面・木・高さはそのまま、連鎖は起こさない、図鑑には残る
+  { id: 'release', name: '帰す', kind: 'release', unlockAt: 0 },
 ]);
 
 // 島が広がる節目（R7、試作だけの数）。stage 1 = 37マス。61マスは24匹の表から。

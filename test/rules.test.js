@@ -175,8 +175,8 @@ test('図鑑と解放：3匹で丘と37マス', () => {
   let p = { found: [] };
   p = recordFound(p, [{ spawned: [{ id: 'pocha' }, { id: 'pocha' }] }, { spawned: [{ id: 'kokedama' }] }]);
   assert.deepEqual(p.found, ['pocha', 'kokedama']);
-  assert.deepEqual(unlocked(2), { placeables: ['grass', 'water', 'sand'], stage: 0 });
-  assert.deepEqual(unlocked(3), { placeables: ['grass', 'water', 'sand', 'hill'], stage: 1 });
+  assert.deepEqual(unlocked(2), { placeables: ['grass', 'water', 'sand', 'release'], stage: 0 });
+  assert.deepEqual(unlocked(3), { placeables: ['grass', 'water', 'sand', 'hill', 'release'], stage: 1 });
 });
 
 test('生き物のデータの形がそろっている', () => {
@@ -188,4 +188,26 @@ test('生き物のデータの形がそろっている', () => {
     assert.ok(['convert', 'grow', 'raise'].includes(sp.effect.kind));
   }
   assert.equal(CREATURES.length, 6);
+});
+
+test('帰す：生き物だけがいなくなり、地面・木・高さは残り、連鎖は起こさない（#1）', () => {
+  const b = makeBoard({
+    '0,0': { ground: 'water', creature: 'pocha', object: 'tree', height: 1 },
+    '1,0': W, '0,1': W,
+  });
+  const { board, steps, released } = place(b, 0, 0, 'release');
+  assert.equal(released, 'pocha');
+  assert.deepEqual(steps, []);
+  assert.deepEqual(board.cells['0,0'], { ...b.cells['0,0'], creature: null });
+  // 形は残っているが、帰しただけでは呼ばない。次に隣が変わると、また出られる
+  assert.equal(readyShapes(board).some((x) => x.key === '0,0'), true);
+  const again = place(board, -1, 0, 'grass');
+  assert.equal(again.board.cells['0,0'].creature, 'pocha');
+});
+
+test('帰すは生き物の居るマスだけ', () => {
+  const b = makeBoard({ '0,0': { ground: 'water', creature: 'pocha' } });
+  assert.equal(whyNotPlace(b, 0, 0, 'release'), null);
+  assert.equal(whyNotPlace(b, 1, 0, 'release'), '生き物がいない');
+  assert.equal(whyNotPlace(b, 0, 0, 'release', 0), null, '最初から使える');
 });

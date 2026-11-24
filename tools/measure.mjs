@@ -10,7 +10,8 @@ import { PLACEABLES } from '../src/core/creatures.js';
 const mode = process.argv[2] ?? 'all';
 const seed = Number(process.argv[3] ?? 1);
 const SIZES = [{ stage: 0, cells: 19 }, { stage: 1, cells: 37 }, { stage: 2, cells: 61 }];
-const ITEMS = PLACEABLES.map((p) => p.id);
+// 工程3 の測りは回収なしで測った。帰す（release）は入れない
+const ITEMS = PLACEABLES.filter((p) => p.kind !== 'release').map((p) => p.id);
 const pct = (a, b) => `${((100 * a) / b).toFixed(1)}%`;
 const out = [];
 const line = (s = '') => { out.push(s); console.log(s); };
