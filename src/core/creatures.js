@@ -9,6 +9,7 @@
 //   grow    … 範囲の中の from に合うマスに上に乗る物 object を置く
 //   raise   … 中心と、範囲の中の from に合うマスの高さを 1 上げる（最大 2）
 //   range: 1 なら隣6マス、2 なら2マス先まで（中心は含まない）
+// hint：見つける前に図鑑に出る一言（企画まとめ「ヒントと図鑑」の最初の段。形の答えは書かない）
 // match に書ける物：ground（地面）、object（上に乗る物。null は何もない）、height（ちょうど）、minHeight（以上）
 
 export const GROUNDS = Object.freeze({
@@ -45,6 +46,7 @@ export const CREATURES = Object.freeze([
     around: { match: { ground: 'water' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'grass' },
     text: '隣の荒れ地をすべて草にする',
+    hint: '水たまりが寄り集まると、しずくが跳ねる',
   },
   {
     id: 'kokedama', no: 2, name: 'コケダマ', title: '苔の毛玉',
@@ -52,6 +54,7 @@ export const CREATURES = Object.freeze([
     around: { match: { ground: 'grass' }, min: 4 },
     effect: { kind: 'grow', range: 1, from: { ground: 'grass' }, object: 'tree' },
     text: '隣の草すべてに木を生やす',
+    hint: '草がたっぷり茂った所で、ころころ転がる',
   },
   {
     id: 'numanushi', no: 3, name: 'ヌマヌシ', title: '沼の主の子',
@@ -59,6 +62,7 @@ export const CREATURES = Object.freeze([
     around: { match: { object: 'tree' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { ground: 'grass' }, to: 'marsh' },
     text: '隣の草をすべて湿地にする',
+    hint: '木陰の水辺がすみか',
   },
   {
     id: 'kerori', no: 4, name: 'ケロリ', title: '湿地のカエルの精',
@@ -66,6 +70,7 @@ export const CREATURES = Object.freeze([
     around: { match: { ground: 'marsh' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { ground: 'sand' }, to: 'water' },
     text: '隣の砂をすべて水にする',
+    hint: 'じめじめした所が大好き',
   },
   {
     id: 'sunamoguri', no: 5, name: 'スナモグリ', title: '砂の竜の子',
@@ -73,6 +78,7 @@ export const CREATURES = Object.freeze([
     around: { match: { ground: 'sand' }, min: 3 },
     effect: { kind: 'raise', range: 1, from: { ground: 'sand' } },
     text: '中心と隣の砂の高さを1上げる（最大2）',
+    hint: '砂がたくさんあると、もぐりたくなる',
   },
   {
     id: 'kazenoko', no: 6, name: 'カゼノコ', title: '丘の風の子',
@@ -80,5 +86,6 @@ export const CREATURES = Object.freeze([
     around: { match: { ground: 'grass' }, min: 3 },
     effect: { kind: 'convert', range: 2, from: { ground: 'barren' }, to: 'grass' },
     text: '2マス先までの荒れ地をすべて草にする',
+    hint: 'いちばん高い丘の上で、風を待っている',
   },
 ]);

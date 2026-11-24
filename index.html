@@ -8,17 +8,52 @@
 </head>
 <body>
 <main id="app">
-  <h1>Mythic Mosaic</h1>
-  <p class="lead">枯れた土地に六角の地形を敷くと、幻の生き物が住みつき、土地をさらに変えていく。</p>
-  <p class="note">いまは作り始めたところ（工程0：土台）。下は箱庭の島の広がり方の見本。</p>
-  <div class="stages" role="group" aria-label="島の段">
-    <button type="button" data-stage="0">19マス</button>
-    <button type="button" data-stage="1">37マス</button>
-    <button type="button" data-stage="2">61マス</button>
+  <header class="topbar">
+    <h1>Mythic Mosaic</h1>
+    <p class="count"><span id="found-count">0</span> / <span id="found-total">6</span> 匹</p>
+  </header>
+
+  <div class="stage">
+    <svg id="board" role="img" aria-label="箱庭の島"></svg>
+    <p id="chain" class="chain" aria-hidden="true"></p>
   </div>
-  <svg id="island" role="img" aria-label="箱庭の島"></svg>
-  <p class="version">版 <span id="version"></span></p>
+
+  <div id="log" class="log" aria-live="polite"></div>
+
+  <div class="palette" role="group" aria-label="置く物"></div>
+
+  <nav class="tools">
+    <button type="button" id="undo">1手戻す</button>
+    <button type="button" id="clear">更地にする</button>
+    <button type="button" id="open-book">図鑑</button>
+    <button type="button" id="open-help">遊び方</button>
+  </nav>
+
+  <p class="version">試作 版 <span id="version"></span></p>
 </main>
+
+<dialog id="book">
+  <h2>図鑑</h2>
+  <ol id="book-list" class="book"></ol>
+  <form method="dialog"><button>閉じる</button></form>
+</dialog>
+
+<dialog id="help">
+  <h2>遊び方（試作）</h2>
+  <ol class="help">
+    <li>下で置く物を選び、島のマスを押して置く。</li>
+    <li>ある形ができると、幻の生き物がすぐ現れて中心のマスに住む。</li>
+    <li>現れた生き物は周りの土地を変える。変わった所で次の形ができると連鎖する。</li>
+    <li>見つけた生き物は図鑑に残る。見つける前は一言だけ分かる。</li>
+    <li>生き物を3匹見つけると、丘が置けるようになり、島が37マスに広がる。</li>
+  </ol>
+  <p class="help-note">生き物の居るマスには置けない。地面を置くと木は消え、高さは残る。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
+  <form method="dialog" class="help-actions">
+    <button>閉じる</button>
+    <button type="button" id="reset" class="danger">記録を全部消す</button>
+  </form>
+</dialog>
+
 <script type="module" src="src/ui/main.js"></script>
 </body>
 </html>

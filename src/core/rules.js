@@ -141,9 +141,11 @@ function runStep(board, changed, used, catalog) {
     touched.add(k);
   }
   const changedKeys = [...touched].sort();
+  const after = { ...board, cells };
+  // spawnedBoard＝生き物が出た直後（効果の前）、board＝効果を当てた後。画面が段ごとに見せるのに使う
   return {
-    board: { ...board, cells },
-    step: { spawned, blocked, clashes, changed: changedKeys },
+    board: after,
+    step: { spawned, blocked, clashes, changed: changedKeys, spawnedBoard: placed, board: after },
   };
 }
 
@@ -161,7 +163,8 @@ export function whyNotPlace(board, q, r, itemId, foundCount = Infinity) {
 }
 
 // 置いて、連鎖が止まるまで動かす。
-// 返り値：{ board, steps }。steps[i] は i+1 段目（spawned＝出た生き物、changed＝変わったマス）。
+// 返り値：{ board, placedBoard, steps }。placedBoard＝置いた直後の盤。steps[i] は i+1 段目
+// （spawned＝出た生き物、changed＝変わったマス、spawnedBoard・board＝その段の途中と後の盤）。
 // 連鎖の数＝steps.length。
 export function place(board, q, r, itemId, { catalog = CREATURES, foundCount = Infinity } = {}) {
   const why = whyNotPlace(board, q, r, itemId, foundCount);
@@ -172,7 +175,8 @@ export function place(board, q, r, itemId, { catalog = CREATURES, foundCount = I
   const next = item.kind === 'ground'
     ? { ...c, ground: item.ground, object: null }
     : { ...c, height: c.height + 1 };
-  let cur = { ...board, cells: { ...board.cells, [k]: next } };
+  const placedBoard = { ...board, cells: { ...board.cells, [k]: next } };
+  let cur = placedBoard;
 
   const used = new Set();
   const steps = [];
@@ -185,7 +189,7 @@ export function place(board, q, r, itemId, { catalog = CREATURES, foundCount = I
     if (step.changed.length === 0) break;
     changed = step.changed;
   }
-  return { board: cur, steps };
+  return { board: cur, placedBoard, steps };
 }
 
 // 見つけた生き物の記録。found は見つけた順の id の並び（図鑑。島から居なくなっても残る＝G1）
