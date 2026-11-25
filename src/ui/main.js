@@ -1,9 +1,11 @@
-// 箱庭の画面（工程2 の試作を、工程4 で24匹に広げた）。ルールは src/core/rules.js、描くのは view.js。
+// 箱庭と連鎖問題の画面（工程2 の試作を、工程4 で24匹に、工程5 で連鎖問題に広げた）。ルールは src/core/rules.js、描くのは view.js。
 import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked, isOpen } from '../core/rules.js';
 import { CREATURES, PLACEABLES, GROUNDS, OBJECTS } from '../core/creatures.js';
 import { parseKey } from '../core/hex.js';
 import { hintLevel, usesOf, usesShown, newRumors, glowCell, STUCK_MOVES } from '../core/hints.js';
 import { ACHIEVEMENTS, newAchievements } from '../core/achievements.js';
+import { puzzleBoard, puzzleCreatures, puzzleOpen, cleared } from '../core/puzzle.js';
+import { PUZZLES } from '../data/puzzles.js';
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
 
@@ -26,17 +28,22 @@ const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
 let state = load() ?? fresh();
 let history = [];
 let busy = false;
+// 連鎖問題を遊んでいる間だけ：{ p, board, step, chains, history, done }。問題の途中は保存しない
+let pz = null;
+const viewBoard = () => (pz ? pz.board : state.board);
+// 試し遊び用：URL に ?test=open を付けると、問題を全部開く（工程9 で外すか決める）
+const TEST_OPEN = new URLSearchParams(location.search).get('test') === 'open';
 
 function fresh() {
-  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water', achieved: [], dry: 0 };
+  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water', achieved: [], dry: 0, cleared: [] };
 }
 
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s?.format !== SAVE_FORMAT || !s.board?.cells) return null;
-    // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が無い
-    return { achieved: [], dry: 0, ...s };
+    // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が、0.6.1 までには解いた問題が無い
+    return { achieved: [], dry: 0, cleared: [], ...s };
   } catch {
     return null;
   }
@@ -77,7 +84,7 @@ function lockText(item) {
 function renderCount() {
   $('found-count').textContent = state.found.length;
   $('found-total').textContent = CREATURES.length;
-  $('undo').disabled = history.length === 0 || busy;
+  $('undo').disabled = (pz ? pz.history.length === 0 : history.length === 0) || busy;
 }
 
 // 3段目：新しい生き物が STUCK_MOVES 手出ないとき、使う物が分かっている生き物が1手で出る所を光らせる
@@ -91,8 +98,29 @@ function glow() {
 }
 
 function render(marks = {}) {
-  drawBoard(svg, state.board, busy ? marks : { ...marks, hint: glow() });
+  drawBoard(svg, viewBoard(), busy || pz ? marks : { ...marks, hint: glow() });
   renderCount();
+  renderMode();
+}
+
+// 箱庭と問題で、下の並びと道具の言葉を入れかえる
+function renderMode() {
+  document.body.classList.toggle('puzzle-mode', Boolean(pz));
+  palette.hidden = Boolean(pz);
+  $('puzzle-bar').hidden = !pz;
+  $('clear').textContent = pz ? 'やり直す' : '更地にする';
+  $('open-puzzles').textContent = pz ? '箱庭へ' : '問題';
+  if (!pz) return;
+  const p = pz.p;
+  $('puzzle-title').textContent = `${p.title}　${p.items.length}手で${p.target}連鎖`;
+  $('puzzle-queue').replaceChildren(...p.items.map((id, i) => {
+    const item = PLACEABLES.find((x) => x.id === id);
+    const li = document.createElement('li');
+    li.className = `item i-${id}${i < pz.step ? ' used' : ''}${i === pz.step && !pz.done ? ' now' : ''}`;
+    li.innerHTML = `<span class="swatch"></span><span class="label">${i + 1}. ${item.name}</span>`
+      + (i < pz.step ? `<span class="lock">${pz.chains[i]}連鎖</span>` : '');
+    return li;
+  }));
 }
 
 function renderBook() {
@@ -155,7 +183,7 @@ async function toast(text) {
 }
 
 function checkAchievements(ctx) {
-  const got = newAchievements(state.achieved, { board: state.board, found: state.found, ...ctx });
+  const got = newAchievements(state.achieved, { board: state.board, found: state.found, cleared: state.cleared, ...ctx });
   if (!got.length) return;
   state.achieved = [...state.achieved, ...got];
   for (const id of got) toast(`実績：${ACHIEVEMENTS.find((a) => a.id === id).name}`);
@@ -193,9 +221,103 @@ function shapeText(c) {
   return `中心が${matchText(c.center)}。${parts.join('、')}`;
 }
 
+// 段ごとに見せる（箱庭と問題で同じ）。set は盤を書きかえる所。段の文を返す
+async function animate(result, k, set) {
+  render({ placed: k });
+  set(result.placedBoard);
+  render({ placed: k });
+  const lines = [];
+  for (const [i, st] of result.steps.entries()) {
+    await wait(STEP_MS);
+    set(st.spawnedBoard);
+    render({ pop: new Set(st.spawned.map((s) => s.key)) });
+    const names = countNames(st.spawned);
+    const newIds = [...new Set(st.spawned.map((s) => s.id))].filter((id) => !state.found.includes(id));
+    const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature);
+    lines.push(`${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`
+      + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : ''));
+    say(lines);
+    if (result.steps.length >= 2) chainEl.textContent = `${i + 1}連鎖`;
+    await wait(STEP_MS);
+    set(st.board);
+    render({ flash: new Set(st.changed) });
+  }
+  return lines;
+}
+
+// ---- 問題 ----
+function startPuzzle(p) {
+  pz = { p, board: puzzleBoard(p), step: 0, chains: [], history: [], done: false };
+  chainEl.textContent = '';
+  say([`下の置く物を順に置いて、${p.items.length}手のうちに${p.target}連鎖を出そう（どの手で出してもよい）`]);
+  render();
+}
+
+function leavePuzzle() {
+  pz = null;
+  chainEl.textContent = '';
+  say(['箱庭に戻った']);
+  render();
+  renderPalette();
+}
+
+async function onPuzzleCell(k) {
+  if (pz.done) { say(['クリアした！「問題」から次の問題を選べる']); return; }
+  const item = pz.p.items[pz.step];
+  if (!item) { say(['置く物はもう無い。やり直すか、1手戻して別の所に置いてみよう']); return; }
+  const [q, r] = parseKey(k);
+  const why = whyNotPlace(pz.board, q, r, item);
+  if (why) { say([`ここには置けない（${why}）`]); return; }
+  busy = true;
+  pz.history.push({ board: pz.board, chains: [...pz.chains] });
+  const result = place(pz.board, q, r, item);
+  chainEl.textContent = '';
+  const lines = await animate(result, k, (b) => { pz.board = b; });
+  pz.chains.push(result.steps.length);
+  pz.step += 1;
+  if (result.steps.length === 0) lines.push('何も起きなかった');
+  if (result.steps.length >= 2) lines.push(`${result.steps.length}連鎖！`);
+  if (cleared(pz.chains, pz.p.target)) {
+    pz.done = true;
+    lines.push(`クリア！（目標 ${pz.p.target}連鎖）`);
+    if (!state.cleared.includes(pz.p.id)) state.cleared = [...state.cleared, pz.p.id];
+    checkAchievements({ puzzleOnly: true });
+    save();
+  } else if (pz.step === pz.p.items.length) {
+    lines.push(`目標の${pz.p.target}連鎖に届かなかった。やり直すか、1手戻して別の所へ`);
+  }
+  say(lines);
+  busy = false;
+  render();
+}
+
+function renderPuzzleList() {
+  $('puzzle-list').replaceChildren(...PUZZLES.map((p) => {
+    const li = document.createElement('li');
+    const open = TEST_OPEN || puzzleOpen(p, state.found);
+    const done = state.cleared.includes(p.id);
+    const names = p.items.map((id) => PLACEABLES.find((x) => x.id === id).name).join('→');
+    li.className = done ? 'done' : open ? 'open' : 'locked';
+    if (open) {
+      li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div><b>${p.title}</b>
+        <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p></div>`;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = '遊ぶ';
+      b.addEventListener('click', () => { $('puzzles').close(); startPuzzle(p); });
+      li.append(b);
+    } else {
+      const left = puzzleCreatures(p).filter((id) => !state.found.includes(id)).length;
+      li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>図鑑であと${left}匹見つけると開く</p></div>`;
+    }
+    return li;
+  }));
+}
+
 // ---- 置く ----
 async function onCell(k) {
   if (busy) return;
+  if (pz) { await onPuzzleCell(k); return; }
   const [q, r] = parseKey(k);
   if (!isOpen(PLACEABLES.find((p) => p.id === state.selected), state.found)) state.selected = 'water';
   const why = whyNotPlace(state.board, q, r, state.selected, state.found);
@@ -221,25 +343,7 @@ async function onCell(k) {
   }
 
   // 段ごとに見せる
-  render({ placed: k });
-  state.board = result.placedBoard;
-  render({ placed: k });
-  const lines = [];
-  for (const [i, st] of result.steps.entries()) {
-    await wait(STEP_MS);
-    state.board = st.spawnedBoard;
-    render({ pop: new Set(st.spawned.map((s) => s.key)) });
-    const names = countNames(st.spawned);
-    const newIds = [...new Set(st.spawned.map((s) => s.id))].filter((id) => !state.found.includes(id));
-    const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature);
-    lines.push(`${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`
-      + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : ''));
-    say(lines);
-    if (result.steps.length >= 2) chainEl.textContent = `${i + 1}連鎖`;
-    await wait(STEP_MS);
-    state.board = st.board;
-    render({ flash: new Set(st.changed) });
-  }
+  const lines = await animate(result, k, (b) => { state.board = b; });
 
   // 図鑑と解放
   const beforeFound = state.found;
@@ -292,7 +396,20 @@ svg.addEventListener('click', (e) => {
 });
 
 $('undo').addEventListener('click', () => {
-  if (busy || history.length === 0) return;
+  if (busy) return;
+  if (pz) {
+    if (pz.history.length === 0) return;
+    const h = pz.history.pop();
+    pz.board = h.board;
+    pz.chains = h.chains;
+    pz.step = h.chains.length;
+    pz.done = cleared(pz.chains, pz.p.target);
+    chainEl.textContent = '';
+    say(['1手戻した']);
+    render();
+    return;
+  }
+  if (history.length === 0) return;
   state.board = history.pop();
   const stage = unlocked(state.found).stage;
   if (stage > state.board.stage) state.board = growIsland(state.board, stage);
@@ -304,6 +421,7 @@ $('undo').addEventListener('click', () => {
 
 $('clear').addEventListener('click', () => {
   if (busy) return;
+  if (pz) { startPuzzle(pz.p); return; }
   if (!confirm('島を全部荒れ地に戻す？（図鑑はそのまま。1手戻すで元に戻せる）')) return;
   history.push(state.board);
   state.board = createBoard(unlocked(state.found).stage);
@@ -313,6 +431,12 @@ $('clear').addEventListener('click', () => {
   render();
 });
 
+$('open-puzzles').addEventListener('click', () => {
+  if (busy) return;
+  if (pz) { leavePuzzle(); return; }
+  renderPuzzleList();
+  $('puzzles').showModal();
+});
 $('open-book').addEventListener('click', () => { renderBook(); showTab('creatures'); $('book').showModal(); });
 function showTab(name) {
   for (const b of document.querySelectorAll('.tab')) b.setAttribute('aria-selected', String(b.dataset.tab === name));

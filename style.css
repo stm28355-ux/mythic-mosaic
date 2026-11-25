@@ -107,12 +107,25 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .i-release .swatch::before { content: "↩"; }
 .lock { font-size: 0.7rem; color: var(--quiet); }
 
-.tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
 .tools button, dialog button {
   min-height: 44px; border: 1px solid var(--quiet); border-radius: 8px;
   background: transparent; color: var(--ink); font: inherit; cursor: pointer;
 }
-.tools button { font-size: 0.9rem; padding: 0 4px; }
+.tools button { font-size: 0.85rem; padding: 0 2px; }
+
+/* 連鎖問題 */
+.puzzle-bar { display: grid; gap: 6px; }
+.puzzle-title { margin: 0; font-weight: 700; color: var(--accent); }
+.puzzle-queue { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.puzzle-queue .item { cursor: default; }
+.puzzle-queue .now { border-color: var(--accent); background: rgb(224 184 90 / 0.15); }
+.puzzle-queue .used { opacity: 0.45; }
+.puzzle-list li { align-items: center; }
+.puzzle-list li > div { flex: 1; }
+.puzzle-list li.locked b { color: var(--quiet); }
+.puzzle-list li.done .ach-mark { color: var(--accent); }
+.puzzle-list button { min-height: 40px; padding: 0 14px; }
 .tools button:disabled { opacity: 0.4; cursor: default; }
 .version { color: var(--quiet); font-size: 0.8rem; margin: 0; text-align: right; }
 

@@ -31,10 +31,10 @@ const corners = (x, y, s = SIZE) => Array.from({ length: 6 }, (_, i) => {
   return `${(x + s * Math.cos(a)).toFixed(1)},${(y + s * Math.sin(a)).toFixed(1)}`;
 }).join(' ');
 
-// 見える範囲は今の島に合わせる（マスを大きく）。次に開く段は点線で、はみ出す所は切れてよい
-function frame(stage) {
-  const shown = Math.min(stage + 1, ISLAND_STAGES.length - 1);
-  const pts = islandCells(stage).map(([q, r]) => toPixel(q, r, SIZE));
+// 見える範囲は今の盤に合わせる（マスを大きく）。箱庭は次に開く段を点線で見せ、はみ出す所は切れてよい
+function frame(board) {
+  const shown = board.puzzle ? board.stage : Math.min(board.stage + 1, ISLAND_STAGES.length - 1);
+  const pts = Object.values(board.cells).map((c) => toPixel(c.q, c.r, SIZE));
   const pad = SIZE + 4;
   const minX = Math.min(...pts.map((p) => p[0])) - pad;
   const minY = Math.min(...pts.map((p) => p[1])) - pad - 2 * LIFT;
@@ -68,7 +68,7 @@ function drawObject(kind, x, y, k) {
 
 // marks: { placed: key, pop: Set(key), flash: Set(key), hint: key（詰まったときに光る所） }
 export function drawBoard(svg, board, marks = {}) {
-  const { shown, viewBox } = frame(board.stage);
+  const { shown, viewBox } = frame(board);
   svg.setAttribute('viewBox', viewBox);
   svg.replaceChildren();
 

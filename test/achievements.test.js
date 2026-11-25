@@ -48,10 +48,12 @@ test('ポチャの国と満員の島', () => {
   assert.ok(got.includes('full') && !got.includes('pocha'));
 });
 
-test('問題とスコアの3つは、工程5・6までは取れない', () => {
+test('問題の実績は解いた問題で取れる。スコアの1つは工程6まで取れない', () => {
   const later = ACHIEVEMENTS.filter((a) => a.later);
-  assert.equal(later.length, 3);
+  assert.deepEqual(later.map((a) => a.id), ['scoreAll']);
   const got = newAchievements([], { board: createBoard(2), found: CREATURES.map((c) => c.id) });
-  assert.ok(later.every((a) => !got.includes(a.id)));
+  assert.ok(!got.includes('puzzle1') && !got.includes('scoreAll'));
   assert.ok(got.includes('all') && got.includes('rumors') && got.includes('g-flower'));
+  const one = newAchievements([], { board: createBoard(0), found: [], cleared: ['x'], puzzleOnly: true });
+  assert.deepEqual(one, ['puzzle1'], '問題の盤では、問題の実績だけ見る');
 });
