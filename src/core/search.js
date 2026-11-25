@@ -7,7 +7,7 @@ import { parseKey } from './hex.js';
 // 盤 board に items を順に置く全部の置き方を試す。
 // 返り値：{ best, bestMoves, nodes } … best＝1手で出た連鎖のうち一番長い数、bestMoves＝そのときの置き場所、nodes＝試した置き方の数
 // limit を超えたら打ち切って { aborted: true } を付ける。
-export function searchBestChain(board, items, { limit = Infinity } = {}) {
+export function searchBestChain(board, items, { limit = Infinity, catalog } = {}) {
   const keys = Object.keys(board.cells).sort();
   let best = -1;
   let bestMoves = null;
@@ -25,7 +25,7 @@ export function searchBestChain(board, items, { limit = Infinity } = {}) {
       const [q, r] = parseKey(k);
       if (whyNotPlace(b, q, r, items[depth])) continue;
       if (++nodes > limit) { aborted = true; return; }
-      const { board: next, steps } = place(b, q, r, items[depth]);
+      const { board: next, steps } = place(b, q, r, items[depth], catalog ? { catalog } : {});
       moves.push(k);
       dfs(next, depth + 1, Math.max(sofar, steps.length));
       moves.pop();

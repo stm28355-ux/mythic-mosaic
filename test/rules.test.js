@@ -1,9 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createBoard, growIsland, place, readyShapes, whyNotPlace, recordFound, unlocked, AREA_HEIGHTS } from '../src/core/rules.js';
+import { createBoard, growIsland, place as placeAny, readyShapes as readyAny, whyNotPlace, recordFound, unlocked, AREA_FEATURES } from '../src/core/rules.js';
 import { CREATURES } from '../src/core/creatures.js';
 import { stageOf, parseKey } from '../src/core/hex.js';
 import { makeBoard, spawnIds } from './helpers.js';
+
+// 試作の6匹（第3回）の決めごとを確かめるテストは、6匹だけで動かす（24匹だとほかの生き物も連鎖に入る）
+const PROTO = CREATURES.slice(0, 6);
+const place = (b, q, r, it, opt = {}) => placeAny(b, q, r, it, { catalog: PROTO, ...opt });
+const readyShapes = (b) => readyAny(b, PROTO);
 
 const W = { ground: 'water' };
 const G = { ground: 'grass' };
@@ -21,7 +26,7 @@ test('島を広げても今あるマスはそのまま、新しい所の丘は�
   const g = growIsland(b, 1);
   assert.equal(Object.keys(g.cells).length, 37);
   assert.equal(g.cells['-2,2'].ground, 'grass');
-  for (const [k, h] of Object.entries(AREA_HEIGHTS[1])) {
+  for (const [k, h] of Object.entries(AREA_FEATURES[1].heights)) {
     assert.equal(stageOf(...parseKey(k)), 1, `${k} は2段目で開くマス`);
     assert.equal(g.cells[k].height, h);
   }
@@ -184,10 +189,11 @@ test('生き物のデータの形がそろっている', () => {
   for (const sp of CREATURES) {
     assert.ok(!ids.has(sp.id), `id が重なる: ${sp.id}`);
     ids.add(sp.id);
-    assert.ok(sp.name && sp.text && sp.center && sp.around && sp.effect);
-    assert.ok(['convert', 'grow', 'raise'].includes(sp.effect.kind));
+    assert.ok(sp.name && sp.text && sp.center && (sp.around || sp.line) && (sp.effect || sp.effects));
+    assert.ok(sp.hint);
   }
-  assert.equal(CREATURES.length, 6);
+  assert.equal(CREATURES.length, 24);
+  assert.deepEqual(CREATURES.map((c) => c.no), Array.from({ length: 24 }, (_, i) => i + 1));
 });
 
 test('帰す：生き物だけがいなくなり、地面・木・高さは残り、連鎖は起こさない（#1）', () => {

@@ -10,7 +10,7 @@
 <main id="app">
   <header class="topbar">
     <h1>Mythic Mosaic</h1>
-    <p class="count"><span id="found-count">0</span> / <span id="found-total">6</span> 匹</p>
+    <p class="count"><span id="found-count">0</span> / <span id="found-total">24</span> 匹</p>
   </header>
 
   <div class="stage">
@@ -46,9 +46,10 @@
     <li>現れた生き物は周りの土地を変える。変わった所で次の形ができると連鎖する。</li>
     <li>見つけた生き物は図鑑に残る。見つける前は一言だけ分かる。</li>
     <li>島が埋まってきたら「帰す」を選んで生き物を押すと、島から帰る。土地はそのまま残り、図鑑からも消えない。</li>
-    <li>生き物を3匹見つけると、丘が置けるようになり、島が37マスに広がる。</li>
+    <li>生き物を見つけるほど、置ける物と島が広がる。3匹で丘と37マス、8匹で岩、10匹で61マス。巣は、ある生き物（？？？）を見つけると置ける。</li>
+    <li>生き物の中には、隣の生き物を帰すものもいる。そのときは空いたマスで連鎖が続く。</li>
   </ol>
-  <p class="help-note">生き物の居るマスには置けない（先に帰す）。帰しただけでは連鎖は起きない。地面を置くと木は消え、高さは残る。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
+  <p class="help-note">生き物の居るマスには置けない（先に帰す）。帰しただけでは連鎖は起きない。地面を置くと上の物（木・花・岩・巣）は消え、高さは残る。岩と巣は地面を変えずに上に置く。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
   <form method="dialog" class="help-actions">
     <button>閉じる</button>
     <button type="button" id="reset" class="danger">記録を全部消す</button>

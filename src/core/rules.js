@@ -9,12 +9,13 @@
 // - 住んだ生き物は、条件が崩れても去らない（R4）。
 // - 地面を置くと上に乗る物は消え、高さは残る（R5）。生き物の居るマスには置けない（D9）。
 
-import { key, neighbors, distance, islandCells } from './hex.js';
+import { key, neighbors, distance, islandCells, DIRS } from './hex.js';
 import { CREATURES, PLACEABLES, ISLAND_UNLOCKS, MAX_HEIGHT } from './creatures.js';
 
-// 新しく開く所の丘（第2回 F3「所々に岩や丘」。岩は24匹の表で足す）
-export const AREA_HEIGHTS = Object.freeze({
-  1: Object.freeze({ '2,-1': 1, '0,-2': 1, '-1,-2': 2 }),
+// 新しく開く所の丘と岩（第2回 F3「所々に岩や丘」）
+export const AREA_FEATURES = Object.freeze({
+  1: Object.freeze({ heights: { '2,-1': 1, '0,-2': 1, '-1,-2': 2 }, rocks: ['1,0'] }),
+  2: Object.freeze({ heights: { '4,-4': 2, '3,-1': 1, '2,-4': 1 }, rocks: ['4,-2', '1,-4', '3,-3'] }),
 });
 
 const blank = (q, r) => ({ q, r, ground: 'barren', height: 0, object: null, creature: null });
@@ -32,10 +33,10 @@ export function growIsland(board, stage) {
   if (stage <= board.stage) return board;
   const cells = { ...board.cells };
   for (let s = board.stage + 1; s <= stage; s++) {
-    const hills = AREA_HEIGHTS[s] ?? {};
+    const f = AREA_FEATURES[s] ?? { heights: {}, rocks: [] };
     for (const [q, r] of islandCells(s)) {
       const k = key(q, r);
-      if (!cells[k]) cells[k] = { ...blank(q, r), height: hills[k] ?? 0 };
+      if (!cells[k]) cells[k] = { ...blank(q, r), height: f.heights[k] ?? 0, object: f.rocks.includes(k) ? 'rock' : null };
     }
   }
   return { stage, cells };
@@ -48,8 +49,17 @@ export function matches(cell, m) {
   if (m.object !== undefined && cell.object !== m.object) return false;
   if (m.height !== undefined && cell.height !== m.height) return false;
   if (m.minHeight !== undefined && cell.height < m.minHeight) return false;
+  if (m.maxHeight !== undefined && cell.height > m.maxHeight) return false;
+  if (m.creature !== undefined) {
+    if (m.creature === 'any') { if (!cell.creature) return false; }
+    else if (cell.creature !== m.creature) return false;
+  }
   return true;
 }
+
+// 生き物の書き方をそろえる：around は1つでも並びでもよい、効果は effect（1つ）か effects（並び）
+const aroundsOf = (sp) => (Array.isArray(sp.around) ? sp.around : sp.around ? [sp.around] : []);
+export const effectsOf = (sp) => sp.effects ?? (sp.effect ? [sp.effect] : []);
 
 const around = (board, c) => neighbors(c.q, c.r).map(([q, r]) => board.cells[key(q, r)]).filter(Boolean);
 
@@ -63,9 +73,28 @@ function inRange(board, c, range) {
 }
 
 // この生き物の形が、マス c を中心にできているか（住めるかは別）
+// 隣の条件は全部そろって成り立つ（min 以上・max 以下）。line は中心を真ん中にした一直線（3つの向きのどれか）
 export function shapeAt(board, c, sp) {
   if (!matches(c, sp.center)) return false;
-  return around(board, c).filter((x) => matches(x, sp.around.match)).length >= sp.around.min;
+  const ns = around(board, c);
+  for (const a of aroundsOf(sp)) {
+    const n = ns.filter((x) => matches(x, a.match)).length;
+    if (n < (a.min ?? 0)) return false;
+    if (a.max !== undefined && n > a.max) return false;
+  }
+  if (sp.line) {
+    const half = (sp.line.length - 1) / 2;
+    const ok = DIRS.slice(0, 3).some(([dq, dr]) => {
+      for (let i = 1; i <= half; i++) {
+        for (const sgn of [1, -1]) {
+          if (!matches(board.cells[key(c.q + sgn * dq * i, c.r + sgn * dr * i)], sp.line.match)) return false;
+        }
+      }
+      return true;
+    });
+    if (!ok) return false;
+  }
+  return true;
 }
 
 // 生き物が住める形ができているのに住んでいない中心（置く前に何も起きない盤かを確かめるのに使う）
@@ -109,7 +138,7 @@ function runStep(board, changed, used, catalog) {
   const cells = { ...board.cells };
   for (const s of spawned) cells[s.key] = { ...cells[s.key], creature: s.id };
   for (const s of spawned) used.add(s.id);
-  const placed = { ...board, cells };
+  const placed = { ...board, cells: { ...cells } }; // 写しを取る（このあと cells に効果を書くので）
 
   // 効果の頼みを層ごとに集める（同じ段の中では、生き物が出たあとの盤を見る）
   const requests = new Map(); // "key|layer" -> Set(値)
@@ -118,15 +147,27 @@ function runStep(board, changed, used, catalog) {
     if (!requests.has(id)) requests.set(id, new Set());
     requests.get(id).add(JSON.stringify(value));
   };
+  // 効果の種類：convert（地面を変える。object があれば上の物も）、grow（上の物を置く・変える）、
+  // raise・lower（高さを1上げ下げ。raise は withCenter が false でなければ中心も）、clear（上の物を消す）、
+  // release（生き物を帰す。帰ったマスは「変わった」に数え、次の段で調べる＝人の「帰す」とは違う）
   for (const s of spawned) {
     const sp = catalog.find((x) => x.id === s.id);
     const c = cells[s.key];
-    const fx = sp.effect;
-    const targets = inRange(placed, c, fx.range).filter((x) => matches(x, fx.from));
-    if (fx.kind === 'convert') for (const x of targets) ask(key(x.q, x.r), 'ground', fx.to);
-    if (fx.kind === 'grow') for (const x of targets) ask(key(x.q, x.r), 'object', fx.object);
-    if (fx.kind === 'raise') {
-      for (const x of [c, ...targets]) ask(key(x.q, x.r), 'height', Math.min(MAX_HEIGHT, x.height + 1));
+    for (const fx of effectsOf(sp)) {
+      const targets = inRange(placed, c, fx.range).filter((x) => matches(x, fx.from ?? {}));
+      for (const x of targets) {
+        const k = key(x.q, x.r);
+        if (fx.kind === 'convert') {
+          ask(k, 'ground', fx.to);
+          if (fx.object !== undefined) ask(k, 'object', fx.object);
+        }
+        if (fx.kind === 'grow') ask(k, 'object', fx.object);
+        if (fx.kind === 'raise') ask(k, 'height', Math.min(MAX_HEIGHT, x.height + 1));
+        if (fx.kind === 'lower') ask(k, 'height', Math.max(0, x.height - 1));
+        if (fx.kind === 'clear') ask(k, 'object', null);
+        if (fx.kind === 'release' && x.creature) ask(k, 'creature', null);
+      }
+      if (fx.kind === 'raise' && fx.withCenter !== false) ask(s.key, 'height', Math.min(MAX_HEIGHT, c.height + 1));
     }
   }
 
@@ -149,16 +190,25 @@ function runStep(board, changed, used, catalog) {
   };
 }
 
+// 置く物が開いているか。found は見つけた生き物の id の並び、または数（数のときは生き物で開く物は閉じたまま）
+export function isOpen(item, found = Infinity) {
+  if (found === Infinity) return true;
+  const n = Array.isArray(found) ? found.length : found;
+  if (item.unlockBy) return Array.isArray(found) && found.includes(item.unlockBy);
+  return n >= (item.unlockAt ?? 0);
+}
+
 // 置けるか。置けないときは理由の文字列、置けるときは null
-export function whyNotPlace(board, q, r, itemId, foundCount = Infinity) {
+export function whyNotPlace(board, q, r, itemId, found = Infinity) {
   const c = board.cells[key(q, r)];
   if (!c) return '島の外';
   const item = PLACEABLES.find((p) => p.id === itemId);
   if (!item) return '知らない物';
-  if (foundCount < item.unlockAt) return 'まだ使えない';
+  if (!isOpen(item, found)) return 'まだ使えない';
   if (item.kind === 'release') return c.creature ? null : '生き物がいない';
   if (c.creature) return '生き物が住んでいる';
   if (item.kind === 'ground' && c.ground === item.ground && c.object === null) return '同じ地面';
+  if (item.kind === 'object' && c.object === item.object) return '同じ物';
   if (item.kind === 'raise' && c.height >= MAX_HEIGHT) return 'これ以上高くできない';
   return null;
 }
@@ -167,8 +217,8 @@ export function whyNotPlace(board, q, r, itemId, foundCount = Infinity) {
 // 返り値：{ board, placedBoard, steps }。placedBoard＝置いた直後の盤。steps[i] は i+1 段目
 // （spawned＝出た生き物、changed＝変わったマス、spawnedBoard・board＝その段の途中と後の盤）。
 // 連鎖の数＝steps.length。
-export function place(board, q, r, itemId, { catalog = CREATURES, foundCount = Infinity } = {}) {
-  const why = whyNotPlace(board, q, r, itemId, foundCount);
+export function place(board, q, r, itemId, { catalog = CREATURES, found = Infinity } = {}) {
+  const why = whyNotPlace(board, q, r, itemId, found);
   if (why) throw new Error(`置けない（${why}）: ${itemId} @ ${key(q, r)}`);
   const item = PLACEABLES.find((p) => p.id === itemId);
   const k = key(q, r);
@@ -178,9 +228,9 @@ export function place(board, q, r, itemId, { catalog = CREATURES, foundCount = I
     const released = { ...board, cells: { ...board.cells, [k]: { ...c, creature: null } } };
     return { board: released, placedBoard: released, steps: [], released: c.creature };
   }
-  const next = item.kind === 'ground'
-    ? { ...c, ground: item.ground, object: null }
-    : { ...c, height: c.height + 1 };
+  const next = item.kind === 'ground' ? { ...c, ground: item.ground, object: null }
+    : item.kind === 'object' ? { ...c, object: item.object }
+      : { ...c, height: c.height + 1 };
   const placedBoard = { ...board, cells: { ...board.cells, [k]: next } };
   let cur = placedBoard;
 
@@ -205,10 +255,11 @@ export function recordFound(progress, steps) {
   return { ...progress, found };
 }
 
-// 見つけた数で開く物と島の段
-export function unlocked(foundCount) {
+// 見つけた生き物（id の並び、または数）で開く物と島の段
+export function unlocked(found) {
+  const n = Array.isArray(found) ? found.length : found;
   return {
-    placeables: PLACEABLES.filter((p) => foundCount >= p.unlockAt).map((p) => p.id),
-    stage: Math.max(0, ...ISLAND_UNLOCKS.filter((u) => foundCount >= u.unlockAt).map((u) => u.stage)),
+    placeables: PLACEABLES.filter((p) => isOpen(p, found)).map((p) => p.id),
+    stage: Math.max(0, ...ISLAND_UNLOCKS.filter((u) => n >= u.unlockAt).map((u) => u.stage)),
   };
 }

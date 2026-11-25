@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { searchBestChain } from '../src/core/search.js';
 import { makeRng } from '../src/core/rng.js';
 import { place } from '../src/core/rules.js';
+import { CREATURES } from '../src/core/creatures.js';
+
+const PROTO = CREATURES.slice(0, 6);
 import { makeBoard } from './helpers.js';
 
 const W = { ground: 'water' };
@@ -23,12 +26,12 @@ test('乱数は種が同じなら同じ並び', () => {
 });
 
 test('答え探しは判定表の盤で、水1つの4連鎖を見つける', () => {
-  const { best, bestMoves, nodes } = searchBestChain(makeBoard(EXAMPLE), ['water']);
+  const { best, bestMoves, nodes } = searchBestChain(makeBoard(EXAMPLE), ['water'], { catalog: PROTO });
   assert.equal(best, 4);
   // 4連鎖になる置き場所は1つだけではない（例の (1,-2) のほかに、砂の (0,-2) を水にしても4連鎖）
   assert.equal(bestMoves.length, 1);
   const [q, r] = bestMoves[0].split(',').map(Number);
-  assert.equal(place(makeBoard(EXAMPLE), q, r, 'water').steps.length, 4);
+  assert.equal(place(makeBoard(EXAMPLE), q, r, 'water', { catalog: PROTO }).steps.length, 4);
   assert.ok(nodes > 0 && nodes <= 19);
 });
 

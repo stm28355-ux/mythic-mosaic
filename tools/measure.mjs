@@ -1,17 +1,22 @@
 // 工程3 の測る道具（ゲームには出ない）。
 //   node tools/measure.mjs [chains|capacity|search|all] [種=1]
 // 結果は Markdown で標準出力に出す。docs/measure/ に保存して記録にする。
-import { createBoard, place, whyNotPlace, readyShapes } from '../src/core/rules.js';
+import { createBoard, place as placeAny, whyNotPlace, readyShapes as readyAny } from '../src/core/rules.js';
 import { searchBestChain } from '../src/core/search.js';
 import { makeRng } from '../src/core/rng.js';
 import { parseKey } from '../src/core/hex.js';
-import { PLACEABLES } from '../src/core/creatures.js';
+import { CREATURES } from '../src/core/creatures.js';
+
+// 工程3 は試作の6匹と、草・水・砂・丘だけで測った（24匹の確かめは tools/check-creatures.mjs）
+const PROTO = CREATURES.slice(0, 6);
+const place = (b, q, r, it) => placeAny(b, q, r, it, { catalog: PROTO });
+const readyShapes = (b) => readyAny(b, PROTO);
 
 const mode = process.argv[2] ?? 'all';
 const seed = Number(process.argv[3] ?? 1);
 const SIZES = [{ stage: 0, cells: 19 }, { stage: 1, cells: 37 }, { stage: 2, cells: 61 }];
-// 工程3 の測りは回収なしで測った。帰す（release）は入れない
-const ITEMS = PLACEABLES.filter((p) => p.kind !== 'release').map((p) => p.id);
+// 回収なしで測った。帰す・岩・巣は入れない
+const ITEMS = ['grass', 'water', 'sand', 'hill'];
 const pct = (a, b) => `${((100 * a) / b).toFixed(1)}%`;
 const out = [];
 const line = (s = '') => { out.push(s); console.log(s); };
@@ -147,7 +152,7 @@ function search() {
         continue;
       }
       const t0 = performance.now();
-      const r = searchBestChain(board, items);
+      const r = searchBestChain(board, items, { catalog: PROTO });
       const ms = performance.now() - t0;
       perNode = ms / r.nodes;
       line(`| ${cells}マス | ${k} | ${r.nodes.toLocaleString()} | ${ms < 1000 ? `${ms.toFixed(0)}ミリ秒` : `${(ms / 1000).toFixed(1)}秒`} | ${r.best} |`);

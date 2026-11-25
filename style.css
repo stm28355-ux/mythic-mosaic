@@ -63,8 +63,16 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 @keyframes flash { from { filter: brightness(1.9); } to { filter: none; } }
 .future { fill: none; stroke: var(--quiet); stroke-dasharray: 3 3; opacity: 0.35; }
 
-.trunk { fill: #5a3d27; pointer-events: none; }
-.leaves { fill: #2f6b3a; stroke: #1d4425; stroke-width: 1; pointer-events: none; }
+.obj { pointer-events: none; }
+.trunk { fill: #5a3d27; }
+.leaves { fill: #2f6b3a; stroke: #1d4425; stroke-width: 1; }
+.petal { fill: #f7a8c4; stroke: #b4587a; stroke-width: 0.8; }
+.pistil { fill: #ffe07a; }
+.rock { fill: #8e8a84; stroke: #4a4743; stroke-width: 1.2; }
+.rock-line { fill: none; stroke: #5d5a55; stroke-width: 1; }
+.nest { fill: #9a6b3e; stroke: #5a3d22; stroke-width: 1.2; }
+.nest-hole { fill: #5a3d22; }
+.egg { fill: #f5efe0; stroke: #b9ad94; stroke-width: 0.6; }
 
 .creature { pointer-events: none; transform-box: fill-box; transform-origin: center; }
 .creature.pop { animation: pop 0.45s cubic-bezier(.2, 1.6, .5, 1); }
@@ -77,7 +85,7 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .log p { margin: 0; }
 
 /* 置く物 */
-.palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .item {
   min-height: 56px; border: 2px solid transparent; border-radius: 10px;
   background: var(--panel); color: var(--ink); font: inherit; cursor: pointer;
@@ -90,6 +98,8 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .i-water .swatch { background: var(--water); }
 .i-sand .swatch { background: var(--sand); }
 .i-hill .swatch { background: linear-gradient(#e8e2d6, #8d8579); }
+.i-rock .swatch { background: #8e8a84; clip-path: polygon(10% 85%, 20% 35%, 45% 8%, 80% 15%, 100% 55%, 92% 88%); }
+.i-nest .swatch { background: #9a6b3e; clip-path: ellipse(50% 32% at 50% 62%); }
 .i-release .swatch { clip-path: none; width: auto; height: 22px; line-height: 22px; font-size: 1.1rem; }
 .i-release .swatch::before { content: "↩"; }
 .lock { font-size: 0.7rem; color: var(--quiet); }

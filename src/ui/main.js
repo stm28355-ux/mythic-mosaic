@@ -1,6 +1,6 @@
-// 試作（工程2）の箱庭の画面。ルールは src/core/rules.js、描くのは view.js。
-import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked } from '../core/rules.js';
-import { CREATURES, PLACEABLES, GROUNDS } from '../core/creatures.js';
+// 箱庭の画面（工程2 の試作を、工程4 で24匹に広げた）。ルールは src/core/rules.js、描くのは view.js。
+import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked, isOpen } from '../core/rules.js';
+import { CREATURES, PLACEABLES, GROUNDS, OBJECTS } from '../core/creatures.js';
 import { parseKey } from '../core/hex.js';
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
@@ -52,19 +52,22 @@ function say(lines) {
 }
 
 function renderPalette() {
-  const n = state.found.length;
   palette.replaceChildren(...PLACEABLES.map((item) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = `item i-${item.id}`;
-    const open = n >= item.unlockAt;
+    const open = isOpen(item, state.found);
     b.disabled = !open;
     b.setAttribute('aria-pressed', String(state.selected === item.id));
     b.innerHTML = `<span class="swatch"></span><span class="label">${item.name}</span>`
-      + (open ? '' : `<span class="lock">${item.unlockAt}匹で開く</span>`);
+      + (open ? '' : `<span class="lock">${lockText(item)}</span>`);
     b.addEventListener('click', () => { state.selected = item.id; save(); renderPalette(); });
     return b;
   }));
+}
+
+function lockText(item) {
+  return item.unlockBy ? '？？？で開く' : `${item.unlockAt}匹で開く`;
 }
 
 function renderCount() {
@@ -94,28 +97,51 @@ function renderBook() {
   }));
 }
 
+// 形を文にする（図鑑で見つけたあとに出す）
+function matchText(x) {
+  if (x.creature) return x.creature === 'any' ? '生き物' : byId[x.creature].name;
+  const parts = [];
+  if (x.height !== undefined) parts.push(`高さ${x.height}`);
+  if (x.minHeight !== undefined) parts.push(`高さ${x.minHeight}以上`);
+  if (x.maxHeight !== undefined) parts.push(`高さ${x.maxHeight}まで`);
+  if (x.ground) parts.push(GROUNDS[x.ground].name);
+  if (x.object) parts.push(OBJECTS[x.object].name);
+  let t = parts.join('の') || 'マス';
+  if (x.object === null) t += '（上に何もない）';
+  return t;
+}
+
+function countText({ min, max }, u) {
+  if (min !== undefined && min === max) return `ちょうど${min}${u}`;
+  if (min !== undefined && max !== undefined) return `${min}〜${max}${u}`;
+  if (min !== undefined) return `${min}${u}以上`;
+  return `${max}${u}まで`;
+}
+
 function shapeText(c) {
-  const m = (x) => [
-    x.height !== undefined ? `高さ${x.height}` : '',
-    x.minHeight !== undefined ? `高さ${x.minHeight}以上` : '',
-    x.ground ? GROUNDS[x.ground].name : '',
-    x.object === 'tree' ? '木' : '',
-  ].filter(Boolean).join('の');
-  return `中心が${m(c.center)}、隣に${m(c.around.match)}が${c.around.min}つ以上`;
+  const arounds = c.around ? (Array.isArray(c.around) ? c.around : [c.around]) : [];
+  const parts = arounds.map((a) => {
+    const what = matchText(a.match);
+    if (a.max === 0) return `隣に${what}がいない`;
+    return `隣に${what}が${countText(a, a.match.creature ? '匹' : 'つ')}`;
+  });
+  if (c.line) parts.push(`中心を真ん中にした一直線${c.line.length}マスで、ほかが${matchText(c.line.match)}`);
+  return `中心が${matchText(c.center)}。${parts.join('、')}`;
 }
 
 // ---- 置く ----
 async function onCell(k) {
   if (busy) return;
   const [q, r] = parseKey(k);
-  const why = whyNotPlace(state.board, q, r, state.selected, state.found.length);
+  if (!isOpen(PLACEABLES.find((p) => p.id === state.selected), state.found)) state.selected = 'water';
+  const why = whyNotPlace(state.board, q, r, state.selected, state.found);
   if (why) {
     say([`ここには置けない（${why}）`]);
     return;
   }
   busy = true;
   const before = state.board;
-  const result = place(state.board, q, r, state.selected, { foundCount: state.found.length });
+  const result = place(state.board, q, r, state.selected, { found: state.found });
   history.push(before);
   if (history.length > HISTORY_MAX) history.shift();
   chainEl.textContent = '';
@@ -139,7 +165,9 @@ async function onCell(k) {
     render({ pop: new Set(st.spawned.map((s) => s.key)) });
     const names = countNames(st.spawned);
     const newIds = [...new Set(st.spawned.map((s) => s.id))].filter((id) => !state.found.includes(id));
-    lines.push(`${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`);
+    const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature);
+    lines.push(`${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`
+      + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : ''));
     say(lines);
     if (result.steps.length >= 2) chainEl.textContent = `${i + 1}連鎖`;
     await wait(STEP_MS);
@@ -148,10 +176,10 @@ async function onCell(k) {
   }
 
   // 図鑑と解放
-  const beforeCount = state.found.length;
+  const beforeFound = state.found;
   state.found = recordFound(state, result.steps).found;
-  const opened = unlockMessages(beforeCount, state.found.length);
-  const u = unlocked(state.found.length);
+  const opened = unlockMessages(beforeFound, state.found);
+  const u = unlocked(state.found);
   if (u.stage > state.board.stage) state.board = growIsland(state.board, u.stage);
   if (result.steps.length === 0) lines.push('何も起きなかった');
   if (result.steps.length >= 2) lines.push(`${result.steps.length}連鎖！`);
@@ -168,10 +196,16 @@ function countNames(spawned) {
   return Object.entries(n).map(([id, c]) => (c > 1 ? `${byId[id].name}×${c}` : byId[id].name)).join('・');
 }
 
+function goneNames(board, keys) {
+  const n = {};
+  for (const k of keys) { const id = board.cells[k].creature; n[id] = (n[id] ?? 0) + 1; }
+  return Object.entries(n).map(([id, c]) => (c > 1 ? `${byId[id].name}×${c}` : byId[id].name)).join('・');
+}
+
 function unlockMessages(from, to) {
   const out = [];
   for (const item of PLACEABLES) {
-    if (from < item.unlockAt && to >= item.unlockAt) out.push(`「${item.name}」が置けるようになった`);
+    if (!isOpen(item, from) && isOpen(item, to)) out.push(`「${item.name}」が置けるようになった`);
   }
   const a = unlocked(from).stage;
   const b = unlocked(to).stage;
@@ -188,7 +222,7 @@ svg.addEventListener('click', (e) => {
 $('undo').addEventListener('click', () => {
   if (busy || history.length === 0) return;
   state.board = history.pop();
-  const stage = unlocked(state.found.length).stage;
+  const stage = unlocked(state.found).stage;
   if (stage > state.board.stage) state.board = growIsland(state.board, stage);
   chainEl.textContent = '';
   say(['1手戻した（図鑑はそのまま）']);
@@ -200,7 +234,7 @@ $('clear').addEventListener('click', () => {
   if (busy) return;
   if (!confirm('島を全部荒れ地に戻す？（図鑑はそのまま。1手戻すで元に戻せる）')) return;
   history.push(state.board);
-  state.board = createBoard(unlocked(state.found.length).stage);
+  state.board = createBoard(unlocked(state.found).stage);
   chainEl.textContent = '';
   say(['更地にした']);
   save();
