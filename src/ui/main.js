@@ -108,11 +108,27 @@ function renderMode() {
   document.body.classList.toggle('puzzle-mode', Boolean(pz));
   palette.hidden = Boolean(pz);
   $('puzzle-bar').hidden = !pz;
+  $('puzzle-cast').hidden = !pz;
   $('clear').textContent = pz ? 'やり直す' : '更地にする';
   $('open-puzzles').textContent = pz ? '箱庭へ' : '問題';
   if (!pz) return;
   const p = pz.p;
   $('puzzle-title').textContent = `${p.title}　${p.items.length}手で${p.target}連鎖`;
+  $('puzzle-note').textContent = p.note ? `ねらい：${p.note}` : '';
+  // 出てくる生き物の形と効果（判定表 第7回：組み合わせを覚えていなくても考えられるように）
+  if ($('puzzle-cast').dataset.for !== p.id) {
+    $('puzzle-cast').dataset.for = p.id;
+    const ids = puzzleCreatures(p).sort((a, b) => byId[a].no - byId[b].no);
+    $('puzzle-cast').querySelector('summary').textContent = `出てくる生き物（${ids.length}）`;
+    $('puzzle-cast-list').replaceChildren(...ids.map((id) => {
+      const c = byId[id];
+      const li = document.createElement('li');
+      li.className = 'found';
+      li.innerHTML = `<span class="token" style="background:${CREATURE_LOOK[id].color}">${CREATURE_LOOK[id].mark}</span>
+        <div><b>${c.name}</b><p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
+      return li;
+    }));
+  }
   $('puzzle-queue').replaceChildren(...p.items.map((id, i) => {
     const item = PLACEABLES.find((x) => x.id === id);
     const li = document.createElement('li');
@@ -300,7 +316,7 @@ function renderPuzzleList() {
     li.className = done ? 'done' : open ? 'open' : 'locked';
     if (open) {
       li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div><b>${p.title}</b>
-        <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p></div>`;
+        <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p>${p.note ? `<p class="reward">ねらい：${p.note}</p>` : ''}</div>`;
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = '遊ぶ';

@@ -174,3 +174,6 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .help-note { color: var(--quiet); font-size: 0.9rem; }
 .help-actions { display: flex; gap: 8px; justify-content: space-between; }
 .danger { border-color: #c56a5a !important; color: #f0a596 !important; }
+.puzzle-note { margin: 0; font-size: 0.9rem; }
+.puzzle-cast summary { cursor: pointer; color: var(--quiet); font-size: 0.9rem; }
+.puzzle-cast .book { margin-top: 6px; }

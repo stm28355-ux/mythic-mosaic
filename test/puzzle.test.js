@@ -18,9 +18,12 @@ const playExample = (p) => {
   return chains;
 };
 
-test('問題は1つ以上あり、id がかぶらない', () => {
+test('問題は1つ以上あり、id がかぶらない。入門が先に並ぶ', () => {
   assert.ok(PUZZLES.length >= 1);
   assert.equal(new Set(PUZZLES.map((p) => p.id)).size, PUZZLES.length);
+  const firstHard = PUZZLES.findIndex((p) => !p.intro);
+  assert.ok(firstHard === -1 || PUZZLES.slice(firstHard).every((p) => !p.intro));
+  assert.ok(PUZZLES.every((p) => p.note), 'どの問題にも、ねらいがある');
 });
 
 for (const p of PUZZLES) {
@@ -30,10 +33,10 @@ for (const p of PUZZLES) {
     for (const it of p.items) assert.ok(PLACEABLES.some((x) => x.id === it && x.kind !== 'release'));
   });
 
-  test(`${p.id}：素直な置き方では届かず、出てくる生き物はファイルのとおり`, () => {
+  test(`${p.id}：${p.intro ? '入門' : '素直な置き方では届かず'}、出てくる生き物はファイルのとおり`, () => {
     const board = puzzleBoard(p);
-    assert.ok(greedyBest(board, p.items) < p.target);
-    const all = solveAll(board, p.items, { aim: p.aim });
+    if (!p.intro) assert.ok(greedyBest(board, p.items) < p.target);
+    const all = solveAll(board, p.items, { aim: p.creature });
     assert.equal(all.best, p.target);
     assert.ok(all.withAim > 0, '狙いの生き物が正解に入る');
     assert.deepEqual([...all.appear].sort(), p.appear);
