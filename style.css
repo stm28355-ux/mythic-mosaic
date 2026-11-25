@@ -13,6 +13,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -60,6 +61,8 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .cell:hover .top { stroke: var(--accent); stroke-width: 2; }
 .top.placed { stroke: var(--accent); stroke-width: 3; }
 .top.flash { animation: flash 0.45s ease-out; }
+.top.hint { animation: hint 1.6s ease-in-out infinite; stroke: #fff3b0; stroke-width: 2.5; }
+@keyframes hint { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
 @keyframes flash { from { filter: brightness(1.9); } to { filter: none; } }
 .future { fill: none; stroke: var(--quiet); stroke-dasharray: 3 3; opacity: 0.35; }
 
@@ -130,6 +133,30 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .book b { margin-right: 6px; }
 .book small { color: var(--quiet); }
 .book p { margin: 0; font-size: 0.9rem; }
+.book .token.shadow.heard { border-color: var(--accent); color: var(--accent); }
+.rumor-mark { font-size: 0.75rem; color: #1a1e27; background: var(--accent); border-radius: 4px; padding: 0 4px; }
+.book .rumor { color: var(--accent); }
+.book .uses { color: var(--quiet); }
+.book-note { margin: 0 0 8px; color: var(--quiet); font-size: 0.9rem; }
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tab { flex: 1; }
+.tab[aria-selected="true"] { border-color: var(--accent) !important; background: rgb(224 184 90 / 0.15) !important; }
+.ach { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
+.ach li { display: flex; gap: 8px; align-items: flex-start; }
+.ach .ach-mark { flex: none; width: 1.4em; text-align: center; color: var(--quiet); font-size: 1.1rem; }
+.ach li.got .ach-mark { color: var(--accent); }
+.ach li.not-yet b { color: var(--quiet); }
+.ach b { margin-right: 6px; }
+.ach small { color: var(--quiet); }
+.ach p { margin: 0; font-size: 0.9rem; }
+.ach .reward { color: var(--quiet); font-size: 0.8rem; }
+.toast {
+  position: fixed; top: 12px; right: 12px; z-index: 10; max-width: 70vw;
+  background: var(--panel); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px;
+  padding: 6px 12px; font-size: 0.9rem; opacity: 0; transform: translateY(-8px);
+  transition: opacity 0.25s, transform 0.25s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: none; }
 .help { padding-left: 1.2em; }
 .help-note { color: var(--quiet); font-size: 0.9rem; }
 .help-actions { display: flex; gap: 8px; justify-content: space-between; }

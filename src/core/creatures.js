@@ -1,6 +1,7 @@
 // 生き物と置ける物のデータ。ルール（rules.js）はこのデータを読むだけで、生き物ごとの処理は書かない。
 // 判定：Claude Docs「Mythic Mosaic 判定表（第3回 工程1：試作の6匹）」（2026-11-25 全部 OK）、
-//       「第5回 工程4：24匹の表」（①〜⑥のあとの18匹。2026-11-25 全部 OK）。
+//       「第5回 工程4：24匹の表」（①〜⑥のあとの18匹。2026-11-25 全部 OK）、
+//       「第6回 工程4：噂と実績」（噂。2026-11-25 全部 OK）。
 //
 // 形（R1）：「中心のマス＋隣の条件」。生き物は中心に住む。隣の条件は数だけなので、回しても同じ。
 //   center: 中心のマスの条件（match）
@@ -15,6 +16,7 @@
 //   release … 範囲の中の生き物を帰す（帰ったマスは「変わった」に数え、次の段で調べる）
 //   range: 1 なら隣6マス、2 なら2マス先まで（中心は含まない）
 // hint：見つける前に図鑑に出る一言（企画まとめ「ヒントと図鑑」の最初の段。形の答えは書かない）
+// rumor：by の生き物のどれかを見つけると聞ける噂（2段目。判定表 第6回 U1〜U21）。①②⑤は最初に見つかるので噂はない
 // 同じマスに2種類が住もうとするとどちらも出ない（D8）ので、中心の条件が重なる生き物は max で分ける。
 // match に書ける物：ground（地面）、object（上に乗る物。null は何もない）、height（ちょうど）、minHeight（以上）、maxHeight（以下）、
 //   creature（生き物の id、または 'any'＝どれでも）
@@ -81,6 +83,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 1, from: { ground: 'grass' }, to: 'marsh' },
     text: '隣の草をすべて湿地にする',
     hint: '木陰の水辺がすみか',
+    rumor: { by: ['kokedama'], text: '水辺に木が2本並ぶと、沼の主の子が顔を出すんだって' },
   },
   {
     id: 'kerori', no: 4, name: 'ケロリ', title: '湿地のカエルの精', group: '湿地',
@@ -89,6 +92,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 1, from: { ground: 'sand' }, to: 'water' },
     text: '隣の砂をすべて水にする',
     hint: 'じめじめした所が大好き',
+    rumor: { by: ['numanushi'], text: 'ぼくが作った湿地を3つ寄せてごらん。ケロケロ聞こえるよ' },
   },
   {
     id: 'sunamoguri', no: 5, name: 'スナモグリ', title: '砂の竜の子', group: '砂と丘',
@@ -105,6 +109,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 2, from: { ground: 'barren' }, to: 'grass' },
     text: '2マス先までの荒れ地をすべて草にする',
     hint: '丘を重ねたいちばん高い所で、草に囲まれて風を待っている',
+    rumor: { by: ['sunamoguri'], text: '砂山に丘をもう1段のせると、てっぺんに風が来る。まわりは草がいい' },
   },
 
   // ---- 第5回の案（18匹）----
@@ -115,6 +120,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'grow', range: 1, from: { ground: 'water', object: null }, object: 'flower' },
     text: '隣の水すべてに花（蓮）を咲かせる',
     hint: 'しずくの精と、一本の木の影が好き',
+    rumor: { by: ['pocha'], text: 'ぼくのそばの水に、木の影が1つだけ落ちると、蓮の姫が来る' },
   },
   {
     id: 'uzumaki', no: 8, name: 'ウズマキ', title: '渦の子', group: '水辺',
@@ -123,6 +129,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'lower', range: 2, from: { minHeight: 1 } },
     text: '2マス先までの高い所を1ずつ削る',
     hint: '大きな湖の真ん中で、ぐるぐる回る',
+    rumor: { by: ['pocha'], text: 'ぼくは水4つまでの池が好き。もっと大きな湖だと、渦の子のもの' },
   },
   {
     id: 'nagare', no: 9, name: 'ナガレ', title: '流れの竜', group: '水辺',
@@ -132,6 +139,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 2, from: { ground: 'sand' }, to: 'water' },
     text: '2マス先までの砂をすべて水にする',
     hint: 'まっすぐな川の、真ん中の中洲で休む',
+    rumor: { by: ['uzumaki', 'doronko'], text: 'まっすぐ5マスの川。真ん中だけ砂にしておくと、竜がひと休みする' },
   },
   {
     id: 'morinoko', no: 10, name: 'モリノコ', title: '森の子守', group: '草と森',
@@ -140,6 +148,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'grass', object: 'tree' },
     text: '隣の荒れ地を草にして木を生やす',
     hint: '木が何本か寄り添う所で、森を広げたがる',
+    rumor: { by: ['kokedama'], text: 'ぼくが生やした木の1本が、ほかの木にぐるり囲まれると、森の子守が来る' },
   },
   {
     id: 'kodama', no: 11, name: 'コダマ', title: '木霊', group: '草と森',
@@ -148,6 +157,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'grow', range: 1, from: { object: 'tree' }, object: 'flower' },
     text: '隣の木をすべて花にする',
     hint: '深い深い森の奥で、こだまを返す',
+    rumor: { by: ['morinoko'], text: '木のまわりをほとんど木にしてごらん。森の奥から声が返ってくる' },
   },
   {
     id: 'mofuroo', no: 12, name: 'モリフクロ', title: '森のふくろう', group: '草と森',
@@ -156,6 +166,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'grow', range: 1, from: { ground: 'grass', object: null }, object: 'flower' },
     text: '隣の草に花を咲かせる。見つけると「巣」が置けるようになる',
     hint: 'ひっそりした木立で、ほうと鳴く',
+    rumor: { by: ['morinoko'], text: '木が3本だけの小さな木立。ふくろうは、そばに誰もいない時だけ来る' },
   },
   {
     id: 'hinadori', no: 13, name: 'ヒナドリ', title: '雛鳥', group: '草と森',
@@ -164,6 +175,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'grow', range: 2, from: { ground: 'grass', object: null }, object: 'flower' },
     text: '2マス先までの草に花を咲かせる',
     hint: '木に守られた巣で、ふ化を待っている',
+    rumor: { by: ['mofuroo'], text: '巣は草の上に置いて。木が2本見守っていれば、雛がかえる' },
   },
   {
     id: 'hanabira', no: 14, name: 'ハナビラ', title: '花びらの妖精', group: '花',
@@ -172,6 +184,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'grass', object: 'flower' },
     text: '隣の荒れ地を、花の咲いた草にする',
     hint: '誰もいない花畑で、ひらひら踊る',
+    rumor: { by: ['hinadori', 'bunbun'], text: '花に囲まれた花。でもそばに誰かいると恥ずかしがる。先に帰してあげて' },
   },
   {
     id: 'bunbun', no: 15, name: 'ブンブ', title: '蜜蜂の精', group: '花',
@@ -180,6 +193,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'grow', range: 1, from: { object: 'flower' }, object: 'tree' },
     text: '隣の花をすべて木にする',
     hint: 'にぎやかな花畑で、花粉を運ぶ',
+    rumor: { by: ['kodama'], text: 'ぼくが咲かせた花畑に、誰か1匹でもいると、蜜蜂がにぎやかに来る' },
   },
   {
     id: 'nijidori', no: 16, name: 'ニジドリ', title: '虹の鳥', group: '花',
@@ -188,6 +202,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 2, from: { ground: 'barren' }, to: 'grass', object: 'flower' },
     text: '2マス先までの荒れ地を、花の咲いた草にする',
     hint: '高い泉のほとりに、花と木がそろうと虹がかかる',
+    rumor: { by: ['kazenoko', 'hasuhime'], text: '高い所の水。花が咲いて、木が1本。虹はそこにかかる' },
   },
   {
     id: 'hitorisuna', no: 17, name: 'ヒトリスナ', title: '独りの砂狐', group: '砂と丘',
@@ -196,6 +211,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 1, from: { ground: 'grass' }, to: 'sand' },
     text: '隣の草をすべて砂にする',
     hint: '小さな砂地で、ひとりぼっちが好き',
+    rumor: { by: ['sunamoguri'], text: '砂が3つだけの小さな砂地。ひとりが好きな子がいる' },
   },
   {
     id: 'iwao', no: 18, name: 'イワオ', title: '岩の巨人の子', group: '岩と山',
@@ -207,6 +223,7 @@ export const CREATURES = Object.freeze([
     ],
     text: '隣の岩を砕いて、そのマスを1高くする',
     hint: '丘に囲まれた荒れ地の岩の上で、力試しをしたい',
+    rumor: { by: ['hitorisuna'], text: '荒れ地の岩を、丘で2つ以上囲んでごらん' },
   },
   {
     id: 'yamanami', no: 19, name: 'ヤマナミ', title: '山並みの竜', group: '岩と山',
@@ -216,6 +233,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'grow', range: 2, from: { ground: 'barren', object: null }, object: 'rock' },
     text: '2マス先までの荒れ地に岩を置く',
     hint: '高い砂山が一直線に連なると、背を伸ばす',
+    rumor: { by: ['iwao', 'nagare'], text: '高い砂山を3つ、まっすぐ並べると、竜が背を伸ばす' },
   },
   {
     id: 'tsumuji', no: 20, name: 'ツムジ', title: 'つむじ風', group: '砂と丘',
@@ -224,6 +242,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'release', range: 1, from: ANY },
     text: '隣の生き物をすべて帰す（風で飛ばす）',
     hint: '高い砂山のてっぺんで、にぎやかさを吹き飛ばす',
+    rumor: { by: ['kazenoko', 'yamanami'], text: '高い砂山のてっぺん。まわりに2匹以上いると、つむじ風が吹く' },
   },
   {
     id: 'hotarubi', no: 21, name: 'ホタルビ', title: '蛍の灯', group: '湿地',
@@ -232,6 +251,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'marsh' },
     text: '隣の荒れ地をすべて湿地にする',
     hint: 'カエルの精のそばの、草の生えた湿地で光る',
+    rumor: { by: ['kerori'], text: 'ぼくのそばの湿地に、草が2つあれば灯がともる' },
   },
   {
     id: 'kirinonushi', no: 22, name: 'キリノヌシ', title: '霧の主', group: '湿地',
@@ -240,6 +260,7 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'release', range: 1, from: ANY },
     text: '隣の生き物をすべて帰す（霧で眠らせる）',
     hint: '人だかりのできた湿地に、霧が立ちこめる',
+    rumor: { by: ['tsumuji', 'hotarubi'], text: '湿地のまわりに3匹集まると、霧の主が来てみんな眠らせちゃう' },
   },
   {
     id: 'doronko', no: 23, name: 'ドロンコ', title: '泥の子', group: '湿地',
@@ -251,6 +272,7 @@ export const CREATURES = Object.freeze([
     ],
     text: '隣の砂を湿地（泥）にして、1低くする',
     hint: '湿地と砂の境目で、泥遊びをする',
+    rumor: { by: ['kerori'], text: '湿地のそばに砂が2つ。泥遊びにちょうどいい' },
   },
   {
     id: 'hajimari', no: 24, name: 'ハジマリ', title: '始まりの竜', group: '始まり',
@@ -262,5 +284,6 @@ export const CREATURES = Object.freeze([
     ],
     text: '隣の生き物をすべて帰し、2マス先までの荒れ地を花の咲いた草にする',
     hint: '六匹に囲まれた荒れ地に、すべての始まりが眠る',
+    rumor: { by: ['nijidori', 'kirinonushi'], text: '6匹に囲まれた荒れ地。最後のひと押しは、丘' },
   },
 ]);

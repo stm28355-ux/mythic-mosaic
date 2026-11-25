@@ -66,7 +66,7 @@ function drawObject(kind, x, y, k) {
   return g;
 }
 
-// marks: { placed: key, pop: Set(key), flash: Set(key) }
+// marks: { placed: key, pop: Set(key), flash: Set(key), hint: key（詰まったときに光る所） }
 export function drawBoard(svg, board, marks = {}) {
   const { shown, viewBox } = frame(board.stage);
   svg.setAttribute('viewBox', viewBox);
@@ -93,6 +93,7 @@ export function drawBoard(svg, board, marks = {}) {
     const top = el('polygon', { points: corners(x, y, SIZE - 1), class: `top g-${c.ground} h${c.height}` });
     if (marks.placed === k) top.classList.add('placed');
     if (marks.flash?.has(k)) top.classList.add('flash');
+    if (marks.hint === k) top.classList.add('hint');
     g.append(top);
     if (c.height > 0) {
       const t = el('text', { x: x + SIZE * 0.55, y: y - SIZE * 0.42, class: 'height-mark' });

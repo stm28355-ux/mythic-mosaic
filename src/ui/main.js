@@ -2,6 +2,8 @@
 import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked, isOpen } from '../core/rules.js';
 import { CREATURES, PLACEABLES, GROUNDS, OBJECTS } from '../core/creatures.js';
 import { parseKey } from '../core/hex.js';
+import { hintLevel, usesOf, usesShown, newRumors, glowCell, STUCK_MOVES } from '../core/hints.js';
+import { ACHIEVEMENTS, newAchievements } from '../core/achievements.js';
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
 
@@ -9,6 +11,7 @@ const SAVE_KEY = 'mythic-mosaic:save';
 const SAVE_FORMAT = 1;
 const STEP_MS = 450;
 const HISTORY_MAX = 50;
+const TOAST_MS = 2000;
 
 const $ = (id) => document.getElementById(id);
 const svg = $('board');
@@ -25,14 +28,15 @@ let history = [];
 let busy = false;
 
 function fresh() {
-  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water' };
+  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water', achieved: [], dry: 0 };
 }
 
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s?.format !== SAVE_FORMAT || !s.board?.cells) return null;
-    return s;
+    // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が無い
+    return { achieved: [], dry: 0, ...s };
   } catch {
     return null;
   }
@@ -76,25 +80,85 @@ function renderCount() {
   $('undo').disabled = history.length === 0 || busy;
 }
 
-function render(marks) {
-  drawBoard(svg, state.board, marks);
+// 3段目：新しい生き物が STUCK_MOVES 手出ないとき、噂を聞いた生き物が1手で出る所を光らせる
+let glowMemo = { board: null, found: -1, cell: null };
+function glow() {
+  if (state.dry < STUCK_MOVES) return null;
+  if (glowMemo.board !== state.board || glowMemo.found !== state.found.length) {
+    glowMemo = { board: state.board, found: state.found.length, cell: glowCell(state.board, state.found) };
+  }
+  return glowMemo.cell?.key ?? null;
+}
+
+function render(marks = {}) {
+  drawBoard(svg, state.board, busy ? marks : { ...marks, hint: glow() });
   renderCount();
 }
 
 function renderBook() {
+  const waiting = CREATURES.filter((c) => hintLevel(c, state.found) === 'rumor').length;
+  $('book-note').textContent = waiting ? `噂を聞いた、まだの生き物：${waiting}匹` : '';
   $('book-list').replaceChildren(...CREATURES.map((c) => {
     const li = document.createElement('li');
-    const found = state.found.includes(c.id);
-    li.className = found ? 'found' : 'unknown';
+    const level = hintLevel(c, state.found);
+    li.className = level === 'found' ? 'found' : 'unknown';
     const look = CREATURE_LOOK[c.id];
-    li.innerHTML = found
-      ? `<span class="token" style="background:${look.color}">${look.mark}</span>
+    const uses = usesShown(c, state.found) ? `<p class="uses">使う物：${usesOf(c).join('・')}</p>` : '';
+    if (level === 'found') {
+      li.innerHTML = `<span class="token" style="background:${look.color}">${look.mark}</span>
          <div><b>${c.name}</b><small>${c.title}</small>
-         <p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`
-      : `<span class="token shadow">？</span>
-         <div><b>？？？</b><p>「${c.hint}」</p></div>`;
+         <p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
+    } else {
+      const teller = level === 'rumor' ? byId[c.rumor.by.find((id) => state.found.includes(id))].name : '';
+      li.innerHTML = `<span class="token shadow${level === 'rumor' ? ' heard' : ''}">？</span>
+         <div><b>？？？</b>${level === 'rumor' ? '<span class="rumor-mark">噂</span>' : ''}<p>「${c.hint}」</p>`
+        + (level === 'rumor' ? `<p class="rumor">${teller}の噂：「${c.rumor.text}」</p>` : '')
+        + `${uses}</div>`;
+    }
     return li;
   }));
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const got = new Set(state.achieved);
+  $('ach-count').textContent = `${got.size} / ${ACHIEVEMENTS.length}`;
+  $('ach-list').replaceChildren(...ACHIEVEMENTS.map((a) => {
+    const li = document.createElement('li');
+    const done = got.has(a.id);
+    li.className = done ? 'got' : 'not-yet';
+    const secret = a.hidden && !done;
+    li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div>
+      <b>${secret ? '？？？' : a.name}</b><small>${a.kind}</small>
+      <p>${secret ? a.teaser : a.text}</p>
+      <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`;
+    return li;
+  }));
+}
+
+// 実績を取ったら端に小さく知らせる（いくつもなら順に）
+const toastQueue = [];
+let toasting = false;
+async function toast(text) {
+  toastQueue.push(text);
+  if (toasting) return;
+  toasting = true;
+  const el = $('toast');
+  while (toastQueue.length) {
+    el.textContent = toastQueue.shift();
+    el.classList.add('show');
+    await wait(TOAST_MS);
+    el.classList.remove('show');
+    await wait(250);
+  }
+  toasting = false;
+}
+
+function checkAchievements(ctx) {
+  const got = newAchievements(state.achieved, { board: state.board, found: state.found, ...ctx });
+  if (!got.length) return;
+  state.achieved = [...state.achieved, ...got];
+  for (const id of got) toast(`実績：${ACHIEVEMENTS.find((a) => a.id === id).name}`);
 }
 
 // 形を文にする（図鑑で見つけたあとに出す）
@@ -148,6 +212,8 @@ async function onCell(k) {
   if (result.released) {
     state.board = result.board;
     say([`${byId[result.released].name}が帰っていった（図鑑には残る）`]);
+    state.dry += 1;
+    checkAchievements({ before });
     busy = false;
     save();
     render({ flash: new Set([k]) });
@@ -179,11 +245,17 @@ async function onCell(k) {
   const beforeFound = state.found;
   state.found = recordFound(state, result.steps).found;
   const opened = unlockMessages(beforeFound, state.found);
+  const rumors = newRumors(beforeFound, state.found).map((c) => {
+    const teller = byId[c.rumor.by.find((id) => state.found.includes(id) && !beforeFound.includes(id))];
+    return `${teller.name}の噂：「${c.rumor.text}」`;
+  });
+  state.dry = state.found.length > beforeFound.length ? 0 : state.dry + 1;
   const u = unlocked(state.found);
   if (u.stage > state.board.stage) state.board = growIsland(state.board, u.stage);
+  checkAchievements({ steps: result.steps, before });
   if (result.steps.length === 0) lines.push('何も起きなかった');
   if (result.steps.length >= 2) lines.push(`${result.steps.length}連鎖！`);
-  say([...lines, ...opened]);
+  say([...lines, ...rumors, ...opened]);
   busy = false;
   save();
   render();
@@ -241,12 +313,20 @@ $('clear').addEventListener('click', () => {
   render();
 });
 
-$('open-book').addEventListener('click', () => { renderBook(); $('book').showModal(); });
+$('open-book').addEventListener('click', () => { renderBook(); showTab('creatures'); $('book').showModal(); });
+function showTab(name) {
+  for (const b of document.querySelectorAll('.tab')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+  $('book-list').hidden = name !== 'creatures';
+  $('book-note').hidden = name !== 'creatures';
+  $('ach-panel').hidden = name !== 'achievements';
+}
+for (const b of document.querySelectorAll('.tab')) b.addEventListener('click', () => showTab(b.dataset.tab));
 $('open-help').addEventListener('click', () => $('help').showModal());
 $('reset').addEventListener('click', () => {
   if (!confirm('図鑑も島も全部消して最初から？（元に戻せない）')) return;
   state = fresh();
   history = [];
+  toastQueue.length = 0;
   save();
   $('help').close();
   say(['最初からになった']);
@@ -255,6 +335,8 @@ $('reset').addEventListener('click', () => {
 });
 
 $('version').textContent = APP_VERSION;
+checkAchievements({}); // 前の記録からも、図鑑と島の実績はさかのぼって取れる（K3）
+save();
 render();
 renderPalette();
 say(state.found.length === 0 ? ['置く物を選んで、島のマスを押してみよう'] : []);

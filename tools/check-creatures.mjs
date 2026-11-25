@@ -1,11 +1,14 @@
 // 工程4 の確かめる道具（ゲームには出ない）。
-//   node tools/check-creatures.mjs [overlap|discover|curious|all] [種=1]
+//   node tools/check-creatures.mjs [overlap|discover|curious|glow|all] [種=1]
 // overlap  … ばらばらな盤で、同じマスに2種類の形が同時にできる組（D8 でどちらも出なくなる）を数える
 // discover … でたらめに遊ぶ人（解放あり・帰すあり）が、何手目で各生き物を見つけるか
+// curious  … 1手先を全部試して、まだの生き物が出る手を選ぶ人
+// glow     … でたらめに遊ぶが、詰まって光る所（判定表 第6回 V5）が出たらそこを試す人
 import { createBoard, growIsland, place, whyNotPlace, shapeAt, recordFound, unlocked } from '../src/core/rules.js';
 import { makeRng } from '../src/core/rng.js';
 import { parseKey } from '../src/core/hex.js';
 import { CREATURES, PLACEABLES } from '../src/core/creatures.js';
+import { glowCell, STUCK_MOVES } from '../src/core/hints.js';
 
 const mode = process.argv[2] ?? 'all';
 const seed = Number(process.argv[3] ?? 1);
@@ -65,11 +68,14 @@ function overlap() {
 
 function discover(policy) {
   const curious = policy === 'curious';
-  console.log(curious ? '## 気づく人が、何手目で見つけるか' : '## でたらめに遊ぶ人が、何手目で見つけるか');
+  const glows = policy === 'glow';
+  console.log(curious ? '## 気づく人が、何手目で見つけるか' : glows ? '## でたらめに遊び、光る所を使う人が、何手目で見つけるか' : '## でたらめに遊ぶ人が、何手目で見つけるか');
   console.log();
   const RUNS = curious ? 6 : 12;
   const MOVES = curious ? 1500 : 3000;
-  console.log(`空の19マスから始め、解放（丘・岩・巣・島）も帰すも使う人を ${RUNS} 回、${MOVES} 手ずつ。` + (curious
+  console.log(`空の19マスから始め、解放（丘・岩・巣・島）も帰すも使う人を ${RUNS} 回、${MOVES} 手ずつ。` + (glows
+    ? `でたらめに置くが、新しい生き物が ${STUCK_MOVES} 手出ないと光る所（噂を聞いた生き物が1手で出る所）に、置く物を順に試して出る物を置く。`
+    : curious
     ? '毎手、置ける手を全部1手だけ試し、まだ見つけていない生き物が出る手があればそれを選ぶ。なければでたらめ（島の6割以上が生き物なら、3回に1回は帰す）。先を読んで組む人ならもっと早い。'
     : '毎手、置ける物と置ける所をでたらめに選ぶ（島の6割以上が生き物なら、3回に1回は帰す）。狙って組む人ならもっと早い。'));
   console.log();
@@ -78,6 +84,7 @@ function discover(policy) {
     const rng = makeRng(seed * 101 + run);
     let board = createBoard(0);
     let progress = { found: [] };
+    let dry = 0;
     for (let t = 1; t <= MOVES; t++) {
       const open = unlocked(progress.found);
       if (open.stage > board.stage) board = growIsland(board, open.stage);
@@ -100,6 +107,17 @@ function discover(policy) {
         }
         if (good.length) res = rng.pick(good);
       }
+      if (glows && dry >= STUCK_MOVES) {
+        const g = glowCell(board, progress.found);
+        if (g) {
+          const [q, r] = g.key.split(',').map(Number);
+          for (const it of open.placeables) {
+            if (it === 'release' || whyNotPlace(board, q, r, it, progress.found)) continue;
+            const tryRes = place(board, q, r, it, { found: progress.found });
+            if (tryRes.steps.some((st) => st.spawned.some((x) => x.id === g.id))) { res = tryRes; break; }
+          }
+        }
+      }
       if (!res) {
         const [q, r, it] = rng.pick(moves);
         res = place(board, q, r, it, { found: progress.found });
@@ -108,6 +126,7 @@ function discover(policy) {
       const before = new Set(progress.found);
       progress = recordFound(progress, res.steps);
       for (const id of progress.found) if (!before.has(id)) firsts[id].push(t);
+      dry = progress.found.length > before.size ? 0 : dry + 1;
     }
   }
   console.log('| 生き物 | 見つけた回数 | 何手目（中央値） | 何手目（早い〜遅い） |');
@@ -125,3 +144,4 @@ console.log();
 if (mode === 'overlap' || mode === 'all') overlap();
 if (mode === 'discover' || mode === 'all') discover('random');
 if (mode === 'curious' || mode === 'all') discover('curious');
+if (mode === 'glow' || mode === 'all') discover('glow');
