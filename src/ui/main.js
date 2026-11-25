@@ -80,7 +80,7 @@ function renderCount() {
   $('undo').disabled = history.length === 0 || busy;
 }
 
-// 3段目：新しい生き物が STUCK_MOVES 手出ないとき、噂を聞いた生き物が1手で出る所を光らせる
+// 3段目：新しい生き物が STUCK_MOVES 手出ないとき、使う物が分かっている生き物が1手で出る所を光らせる
 let glowMemo = { board: null, found: -1, cell: null };
 function glow() {
   if (state.dry < STUCK_MOVES) return null;

@@ -1,7 +1,7 @@
 // ヒントの段（判定表 第6回 V1〜V6）。画面は持たず、図鑑と盤に出す中身だけを作る。
 //   1段目 一言（hint）… 最初から
 //   2段目 噂と使う物 … 噂を言う生き物（rumor.by）のどれかを見つけたら。噂のない①②⑤は使う物を最初から
-//   3段目 光る所     … 新しい生き物が STUCK_MOVES 手出ないとき、噂を聞いたまだの生き物が「あと1手で出る所」を1つ
+//   3段目 光る所     … 新しい生き物が STUCK_MOVES 手出ないとき、使う物が分かっているまだの生き物（噂を聞いた生き物と、噂のない①②⑤）が「あと1手で出る所」を1つ
 //   4段目 形の全部   … 見つけたあと（図鑑）
 import { CREATURES, PLACEABLES, GROUNDS, OBJECTS } from './creatures.js';
 import { place, whyNotPlace, isOpen } from './rules.js';
@@ -49,10 +49,10 @@ export function newRumors(before, after) {
   return CREATURES.filter((c) => !after.includes(c.id) && !rumorHeard(c, before) && rumorHeard(c, after));
 }
 
-// 3段目：噂を聞いたまだの生き物が、今の盤で1手で出る所。{ key, id } か null
+// 3段目：使う物が分かっているまだの生き物（噂を聞いた生き物と、噂のない①②⑤）が、今の盤で1手で出る所。{ key, id } か null
 // 置く物は教えないので、マスだけ返す。マスは決まった順に調べる（同じ盤なら同じ所が光る）
 export function glowCell(board, found, { catalog = CREATURES } = {}) {
-  const targets = new Set(catalog.filter((c) => !found.includes(c.id) && rumorHeard(c, found)).map((c) => c.id));
+  const targets = new Set(catalog.filter((c) => !found.includes(c.id) && usesShown(c, found)).map((c) => c.id));
   if (targets.size === 0) return null;
   const items = PLACEABLES.filter((p) => p.kind !== 'release' && isOpen(p, found)).map((p) => p.id);
   const cells = Object.values(board.cells).sort((a, b) => a.r - b.r || a.q - b.q);

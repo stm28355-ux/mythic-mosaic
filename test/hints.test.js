@@ -42,7 +42,7 @@ test('新しく聞けた噂：2匹から聞ける噂は、片方を見つけた�
   assert.deepEqual(newRumors(['morinoko'], ['morinoko', 'kodama']).map((c) => c.id), ['bunbun'], '見つけた⑪自身は出さない');
 });
 
-test('光る所：噂を聞いたまだの生き物が、1手で出る所', () => {
+test('光る所：使う物が分かっているまだの生き物が、1手で出る所', () => {
   const trees = { '0,0': { ground: 'grass', object: 'tree' }, '1,0': { ground: 'grass', object: 'tree' }, '0,1': { ground: 'grass', object: 'tree' } };
   const found = ['pocha', 'kokedama', 'sunamoguri', 'morinoko'];
   const g = glowCell(makeBoard(trees), found);
@@ -51,4 +51,7 @@ test('光る所：噂を聞いたまだの生き物が、1手で出る所', () =
   assert.ok(['grass', 'water', 'sand', 'hill'].some((it) => place(makeBoard(trees), q, r, it, { found }).steps.some((st) => st.spawned.some((x) => x.id === 'mofuroo'))), '光るマスに何か置くと出る');
   assert.equal(glowCell(makeBoard(trees), ['pocha']), null, '噂を聞いていなければ光らない');
   assert.equal(glowCell(makeBoard(), found), null, '1手で出る所が無ければ光らない');
+  // 噂のない②コケダマも光る（草4つの真ん中に草）
+  const meadow = makeBoard({ '1,0': { ground: 'grass' }, '1,-1': { ground: 'grass' }, '0,-1': { ground: 'grass' }, '-1,0': { ground: 'grass' } });
+  assert.equal(glowCell(meadow, ['pocha']).id, 'kokedama');
 });
