@@ -98,7 +98,7 @@ function glow() {
 }
 
 function render(marks = {}) {
-  drawBoard(svg, viewBoard(), busy || pz ? marks : { ...marks, hint: glow() });
+  drawBoard(svg, viewBoard(), busy ? marks : pz ? { ...marks, hint: firstMoveHint() } : { ...marks, hint: glow() });
   renderCount();
   renderMode();
 }
@@ -114,7 +114,16 @@ function renderMode() {
   if (!pz) return;
   const p = pz.p;
   $('puzzle-title').textContent = `${p.title}　${p.items.length}手で${p.target}連鎖`;
-  $('puzzle-note').textContent = p.note ? `ねらい：${p.note}` : '';
+  // ねらい：入門は初めから出す。ほかはヒント1として伏せ、ヒント2で1手目の所を光らせる（判定表 第8回 R5）
+  const shown = p.intro ? 1 : pz.hints;
+  const first = p.example?.[0];
+  const notes = [];
+  if (shown >= 1 && p.note) notes.push(`${p.intro ? '' : 'ヒント1　'}ねらい：${p.note}`);
+  if (shown >= 2 && first) notes.push(pz.step === 0 ? 'ヒント2　1手目は光る所に置く' : 'ヒント2　1手目は光る所（やり直すと光る）');
+  $('puzzle-note').replaceChildren(...notes.map((t) => Object.assign(document.createElement('span'), { textContent: t })));
+  const nextHint = p.intro ? 0 : pz.hints + 1;
+  $('puzzle-hint').hidden = !((nextHint === 1 && p.note) || (nextHint === 2 && first));
+  $('puzzle-hint').textContent = nextHint === 1 ? 'ヒント1を見る（ねらい）' : 'ヒント2を見る（1手目の所）';
   // 出てくる生き物の形と効果（判定表 第7回：組み合わせを覚えていなくても考えられるように）
   if ($('puzzle-cast').dataset.for !== p.id) {
     $('puzzle-cast').dataset.for = p.id;
@@ -262,8 +271,16 @@ async function animate(result, k, set) {
 }
 
 // ---- 問題 ----
+// ヒント2：まだ1手も置いていないとき、正解の例の1手目を光らせる
+function firstMoveHint() {
+  if (!pz || pz.p.intro || pz.hints < 2 || pz.step !== 0) return null;
+  return pz.p.example?.[0] ?? null;
+}
+
 function startPuzzle(p) {
-  pz = { p, board: puzzleBoard(p), step: 0, chains: [], history: [], done: false };
+  // やり直しても、見たヒントはそのまま
+  const hints = pz && pz.p.id === p.id ? pz.hints : 0;
+  pz = { p, board: puzzleBoard(p), step: 0, chains: [], history: [], done: false, hints };
   chainEl.textContent = '';
   say([`下の置く物を順に置いて、${p.items.length}手のうちに${p.target}連鎖を出そう（どの手で出してもよい）`]);
   render();
@@ -316,7 +333,7 @@ function renderPuzzleList() {
     li.className = done ? 'done' : open ? 'open' : 'locked';
     if (open) {
       li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div><b>${p.title}</b>
-        <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p>${p.note ? `<p class="reward">ねらい：${p.note}</p>` : ''}</div>`;
+        <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p>${p.intro && p.note ? `<p class="reward">ねらい：${p.note}</p>` : ''}</div>`;
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = '遊ぶ';
@@ -444,6 +461,12 @@ $('clear').addEventListener('click', () => {
   chainEl.textContent = '';
   say(['更地にした']);
   save();
+  render();
+});
+
+$('puzzle-hint').addEventListener('click', () => {
+  if (!pz || busy) return;
+  pz.hints = Math.min(2, pz.hints + 1);
   render();
 });
 

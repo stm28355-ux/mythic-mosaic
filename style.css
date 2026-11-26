@@ -121,6 +121,10 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .puzzle-queue .item { cursor: default; }
 .puzzle-queue .now { border-color: var(--accent); background: rgb(224 184 90 / 0.15); }
 .puzzle-queue .used { opacity: 0.45; }
+.puzzle-hint {
+  justify-self: start; min-height: 40px; padding: 0 14px; border: 1px solid var(--quiet); border-radius: 8px;
+  background: transparent; color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer;
+}
 .puzzle-list li { align-items: center; }
 .puzzle-list li > div { flex: 1; }
 .puzzle-list li.locked b { color: var(--quiet); }
@@ -174,6 +178,7 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .help-note { color: var(--quiet); font-size: 0.9rem; }
 .help-actions { display: flex; gap: 8px; justify-content: space-between; }
 .danger { border-color: #c56a5a !important; color: #f0a596 !important; }
-.puzzle-note { margin: 0; font-size: 0.9rem; }
+.puzzle-note { margin: 0; font-size: 0.9rem; display: grid; gap: 2px; }
+.puzzle-note:empty { display: none; }
 .puzzle-cast summary { cursor: pointer; color: var(--quiet); font-size: 0.9rem; }
 .puzzle-cast .book { margin-top: 6px; }

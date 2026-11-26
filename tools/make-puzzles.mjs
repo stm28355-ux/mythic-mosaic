@@ -196,7 +196,7 @@ if (write) {
     // ねらいと入門の印は、いつも今の AIMS に合わせる（intro の問題は、素直な置き方で届いてもよい）
     .map((p) => ({ ...p, creature: AIMS[p.aim]?.aim ?? p.creature, note: AIMS[p.aim]?.note ?? p.note, intro: AIMS[p.aim]?.intro || undefined }));
   const body = list.map((p) => `  ${JSON.stringify(p)}`).join(',\n');
-  writeFileSync(dataPath, `// 連鎖問題（tools/make-puzzles.mjs が作る。手で直さない）\n// cells: [q, r, 地面, 高さ, 上の物, 生き物]。target 連鎖に、items を順に置いて届けば正解。example は正解の1つ（テスト用）。\n// creature は狙いの生き物、note は問題の画面に出す「ねらい」、intro は入門（素直な置き方で届いてもよい）\nexport const PUZZLES = Object.freeze([\n${body},\n]);\n`);
+  writeFileSync(dataPath, `// 連鎖問題（tools/make-puzzles.mjs が作る。手で直さない）\n// cells: [q, r, 地面, 高さ, 上の物, 生き物]。target 連鎖に、items を順に置いて届けば正解。example は正解の1つ（テストと、ヒント2の1手目）。\n// creature は狙いの生き物、note は「ねらい」（入門は初めから出し、ほかはヒント1）、intro は入門（素直な置き方で届いてもよい）\nexport const PUZZLES = Object.freeze([\n${body},\n]);\n`);
   // 書いた問題が読み戻せて、例の置き方で目標に届くかを確かめる
   for (const p of list.filter((x) => x.aim === name)) {
     let b = puzzleBoard(p);
