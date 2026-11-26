@@ -5,7 +5,7 @@ const INK = '#1d1a33';
 const O = {
   leaf: '#3f9a4f', leafLight: '#7cc96a', leafDark: '#2a6b38', trunk: '#7a5232', trunkDark: '#553820',
   petal: '#ff8fb4', petalLight: '#ffc6da', center: '#ffe07a', stem: '#3f9a4f', petal2: '#fff0f6', petal3: '#c9a7ff',
-  rock: '#9a958e', rockLight: '#c4bfb7', rockDark: '#6d6862',
+  rock: '#9a958e', rockLight: '#c4bfb7', rockDark: '#6d6862', shadow: '#1d1a3366',
   nest: '#9a6b3e', nestLight: '#c08e5c', nestDark: '#6f4a2a', egg: '#f5efe0', eggSpot: '#b9ad94',
 };
 
@@ -31,13 +31,22 @@ export const OBJECT_DRAW = {
     flower(g, 16, 19, O.petal3);
     return g.outline(INK);
   },
-  // 岩：まるい岩。上が明るく、ひびが1本
-  rock: () => grid()
-    .ellipse(16, 20, 12, 8, O.rock).ellipse(11, 14, 5, 4, O.rock)
-    .tint(4, 24, 28, 28, O.rockDark, O.rock)
-    .ellipse(12, 13, 2.5, 1.5, O.rockLight).ellipse(19, 15, 3, 1.2, O.rockLight)
-    .line(17, 18, 20, 23, O.rockDark).line(20, 23, 19, 26, O.rockDark)
-    .outline(INK),
+  // 岩：下が平らで、地面に座った岩。足もとに影（判定表 第12回 X1：丸い岩は地面から浮いて見えた）
+  rock: () => {
+    const g = grid()
+      .poly([[3, 27], [5, 19], [9, 13], [16, 10], [23, 12], [27, 18], [29, 27]], O.rock)
+      .tint(3, 23, 29, 27, O.rockDark, O.rock)
+      .ellipse(11, 15, 3, 1.5, O.rockLight).ellipse(19, 13, 3, 1.2, O.rockLight).px1(7, 19, O.rockLight)
+      .line(17, 17, 20, 22, O.rockDark).line(20, 22, 19, 26, O.rockDark)
+      .outline(INK);
+    // 足もとの影：縁取りのあとに、空いているマスだけ塗る
+    for (let y = 28; y <= 30; y++) for (let x = 1; x <= 30; x++) {
+      const dx = (x - 16) / 15;
+      const dy = (y - 28.5) / 2;
+      if (dx * dx + dy * dy <= 1 && !g.px[y][x]) g.px[y][x] = O.shadow;
+    }
+    return g;
+  },
   // 巣：小枝で編んだお椀と、卵2つ
   nest: () => grid()
     .ellipse(13, 17, 3.5, 4, O.egg).ellipse(19, 16, 3.5, 4.2, O.egg).px1(12, 16, O.eggSpot).px1(20, 15, O.eggSpot)
