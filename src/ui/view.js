@@ -2,12 +2,14 @@
 import { islandCells, toPixel, key } from '../core/hex.js';
 import { ISLAND_STAGES } from '../core/hex.js';
 import { CREATURES } from '../core/creatures.js';
+import { creatureSvg } from '../art/creatures.js';
 
 export const SIZE = 30;      // マスの大きさ（中心から頂点）
 const LIFT = 6;              // 高さ1あたりの持ち上げ
+const ART = 44;              // 生き物の絵の大きさ
 const NS = 'http://www.w3.org/2000/svg';
 
-// 生き物の色と印（絵は工程7。いまは丸と番号）
+// 生き物の色と印（工程7 の絵がまだの生き物は、丸と番号）
 const MARKS = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳㉑㉒㉓㉔';
 const COLORS = {
   pocha: '#5fb3e8', kokedama: '#8bc34a', numanushi: '#3f8f8a', kerori: '#c3d84f', sunamoguri: '#e0a458', kazenoko: '#d7e3f4',
@@ -109,10 +111,17 @@ export function drawBoard(svg, board, marks = {}) {
     if (c.creature) {
       const look = CREATURE_LOOK[c.creature] ?? { color: '#fff', mark: '？' };
       const cg = el('g', { class: marks.pop?.has(k) ? 'creature pop' : 'creature' });
-      cg.append(el('circle', { cx: x, cy: y, r: SIZE * 0.5, fill: look.color, class: 'token' }));
-      const t = el('text', { x, y: y + 6, class: 'token-mark' });
-      t.textContent = look.mark;
-      cg.append(t);
+      const art = creatureSvg(c.creature, 32);
+      if (art) {
+        // ドット絵（工程7）：足もとに小さな影
+        cg.append(el('ellipse', { cx: x, cy: y + SIZE * 0.55, rx: SIZE * 0.45, ry: SIZE * 0.12, class: 'art-shadow' }));
+        cg.append(el('image', { href: `data:image/svg+xml;utf8,${encodeURIComponent(art)}`, x: x - ART / 2, y: y - ART / 2 - 2, width: ART, height: ART, class: 'art' }));
+      } else {
+        cg.append(el('circle', { cx: x, cy: y, r: SIZE * 0.5, fill: look.color, class: 'token' }));
+        const t = el('text', { x, y: y + 6, class: 'token-mark' });
+        t.textContent = look.mark;
+        cg.append(t);
+      }
       g.append(cg);
     }
     svg.append(g);

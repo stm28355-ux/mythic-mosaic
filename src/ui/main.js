@@ -10,6 +10,7 @@ import { MAPS } from '../data/maps.js';
 import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, bestScore, SCORE_TEXT } from '../core/score.js';
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
+import { creatureSvg } from '../art/creatures.js';
 
 const SAVE_KEY = 'mythic-mosaic:save';
 const SAVE_FORMAT = 1;
@@ -152,7 +153,7 @@ function renderMode() {
       const c = byId[id];
       const li = document.createElement('li');
       li.className = 'found';
-      li.innerHTML = `<span class="token" style="background:${CREATURE_LOOK[id].color}">${CREATURE_LOOK[id].mark}</span>
+      li.innerHTML = `${tokenHtml(id)}
         <div><b>${c.name}</b><p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
       return li;
     }));
@@ -174,10 +175,9 @@ function renderBook() {
     const li = document.createElement('li');
     const level = hintLevel(c, state.found);
     li.className = level === 'found' ? 'found' : 'unknown';
-    const look = CREATURE_LOOK[c.id];
     const uses = usesShown(c, state.found) ? `<p class="uses">使う物：${usesOf(c).join('・')}</p>` : '';
     if (level === 'found') {
-      li.innerHTML = `<span class="token" style="background:${look.color}">${look.mark}</span>
+      li.innerHTML = `${tokenHtml(c.id)}
          <div><b>${c.name}</b><small>${c.title}</small>
          <p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
     } else {
@@ -206,6 +206,14 @@ function renderAchievements() {
       <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`;
     return li;
   }));
+}
+
+// 図鑑と一覧の生き物の印：絵があれば絵、なければ色の丸と番号
+function tokenHtml(id) {
+  const art = creatureSvg(id, 40);
+  // 画像として入れる（SVG をそのまま入れると、図鑑の中で白い影に見えた）
+  if (art) return `<span class="token art"><img src="data:image/svg+xml;utf8,${encodeURIComponent(art)}" width="40" height="40" alt=""></span>`;
+  return `<span class="token" style="background:${CREATURE_LOOK[id].color}">${CREATURE_LOOK[id].mark}</span>`;
 }
 
 // 実績を取ったら端に小さく知らせる（いくつもなら順に）

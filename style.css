@@ -161,6 +161,8 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
   display: grid; place-items: center; color: #1a1e27; font-weight: 800;
 }
 .book .token.shadow { background: #11141b; color: var(--quiet); border-color: var(--quiet); }
+.book .token.art { border: none; border-radius: 8px; background: rgb(255 255 255 / 0.06); }
+.art-shadow { fill: rgb(0 0 0 / 0.28); }
 .book b { margin-right: 6px; }
 .book small { color: var(--quiet); }
 .book p { margin: 0; font-size: 0.9rem; }
