@@ -6,8 +6,8 @@ import { creatureSvg } from '../art/creatures.js';
 import { objectSvg } from '../art/objects.js';
 
 export const SIZE = 30;      // マスの大きさ（中心から頂点）
-const LIFT = 6;              // 高さ1あたりの持ち上げ
-const ART = 44;              // 生き物の絵の大きさ
+export const LIFT = 6;       // 高さ1あたりの持ち上げ
+export const ART = 44;       // 生き物の絵の大きさ
 const NS = 'http://www.w3.org/2000/svg';
 
 // 生き物の色と印（工程7 の絵がまだの生き物は、丸と番号）

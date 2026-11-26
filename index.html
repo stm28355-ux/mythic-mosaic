@@ -16,6 +16,7 @@
   <div class="stage" data-ui="stage">
     <svg id="board" role="img" aria-label="箱庭の島"></svg>
     <p id="chain" class="chain" aria-hidden="true"></p>
+    <p id="preview" class="preview" hidden></p>
   </div>
 
   <div id="log" class="log" data-ui="log" aria-live="polite"></div>
@@ -75,7 +76,11 @@
 </dialog>
 
 <dialog id="help">
-  <h2>遊び方（試作）</h2>
+  <h2>遊び方と設定（試作）</h2>
+  <div class="settings" data-ui="settings">
+    <label><input type="checkbox" id="set-fx" data-act="set-fx"> エフェクト（生き物が出る時・効果を当てる時の動き。切ると待たずに進む）</label>
+    <label><input type="checkbox" id="set-preview" data-act="set-preview"> 置く前に知らせる（マスにマウスを乗せる・長押しすると、最初に出る生き物が分かる）</label>
+  </div>
   <ol class="help">
     <li>下で置く物を選び、島のマスを押して置く。</li>
     <li>ある形ができると、幻の生き物がすぐ現れて中心のマスに住む。</li>
@@ -86,6 +91,7 @@
     <li>生き物の中には、隣の生き物を帰すものもいる。そのときは空いたマスで連鎖が続く。</li>
     <li>生き物を見つけると、まだの生き物の噂を話す。噂は図鑑にも残り、形に使う物も分かる。</li>
     <li>新しい生き物がしばらく出ないと、使う物が分かっている生き物が1手で現れる所が、島の上でほんのり光る。</li>
+    <li>「置く前に知らせる」が入っていると、マスにマウスを乗せる（スマホは長押し）だけで、置いたときに最初に出る生き物が分かる。まだ見つけていない生き物は「？？？」。連鎖問題では出ない。</li>
     <li>図鑑の「実績」で、取った実績を見られる。島の生き物を押すと、名前と形と効果が出る（帰すを選んでいるときは帰す）。</li>
     <li>「挑戦」の連鎖問題では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。</li>
     <li>「挑戦」の一番下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。地図は図鑑の数で開く。点は出た生き物1匹に1点、1手の連鎖が3・5・8段に届くと追加点。</li>

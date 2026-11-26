@@ -11,12 +11,15 @@ import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, bestScore, SCORE_TEXT
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
 import { creatureSvg } from '../art/creatures.js';
+import { fxLayer, ensureDefs, spawnFx, actionFx, impactFx, placeFx } from './fx.js';
 
 const SAVE_KEY = 'mythic-mosaic:save';
 const SAVE_FORMAT = 1;
 const STEP_MS = 450;
 const HISTORY_MAX = 50;
 const TOAST_MS = 2000;
+// 設定（判定表 第14回）：エフェクト、置く前に知らせる
+const DEFAULT_SETTINGS = { fx: true, preview: true };
 
 const $ = (id) => document.getElementById(id);
 const svg = $('board');
@@ -40,7 +43,7 @@ const viewBoard = () => (pz ? pz.board : sa ? sa.board : state.board);
 const TEST_OPEN = new URLSearchParams(location.search).get('test') === 'open';
 
 function fresh() {
-  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water', achieved: [], dry: 0, cleared: [], best: {} };
+  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, settings: { ...DEFAULT_SETTINGS } };
 }
 
 function load() {
@@ -48,7 +51,7 @@ function load() {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s?.format !== SAVE_FORMAT || !s.board?.cells) return null;
     // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が、0.6.1 までには解いた問題が、0.8.1 までにはスコアの記録が無い
-    return { achieved: [], dry: 0, cleared: [], best: {}, ...s };
+    return { achieved: [], dry: 0, cleared: [], best: {}, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
   } catch {
     return null;
   }
@@ -301,30 +304,57 @@ function shapeText(c) {
   return `中心が${matchText(c.center)}。${parts.join('、')}`;
 }
 
-// 段ごとに見せる（箱庭と問題で同じ）。set は盤を書きかえる所。段の文を返す
+// 段の文
+function stepLine(st, i) {
+  const names = countNames(st.spawned);
+  const newIds = [...new Set(st.spawned.map((s) => s.id))].filter((id) => !state.found.includes(id));
+  const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature);
+  return `${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`
+    + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : '');
+}
+const tiltLine = (st, tilt) => `（${countNames(st.spawned.filter((s) => tilt.has(s.key)))}が首をかしげた：頼みがぶつかって、そのマスは変わらなかった）`;
+
+// 段ごとに見せる（箱庭・問題・スコアアタックで同じ）。set は盤を書きかえる所。段の文を返す。
+// エフェクトが入っていれば、登場（光の柱・輪・きらめき）→ 行動（光の玉が飛ぶ）→ 着いたマスの波紋と粒、を段ごとに見せる。
+// 切っていれば待たずに最後の盤まで進め、出た生き物と変わったマスをまとめて光らせる（判定表 第14回）
 async function animate(result, k, set) {
+  const lines = [];
+  if (!state.settings.fx) {
+    for (const [i, st] of result.steps.entries()) {
+      lines.push(stepLine(st, i));
+      const tilt = tiltKeys(st);
+      if (tilt.size) lines.push(tiltLine(st, tilt));
+    }
+    set(result.board);
+    if (result.steps.length >= 2) chainEl.textContent = `${result.steps.length}連鎖`;
+    say(lines);
+    render({ placed: k, pop: new Set(result.steps.flatMap((st) => st.spawned.map((x) => x.key))), flash: new Set(result.steps.flatMap((st) => st.changed)) });
+    return lines;
+  }
+  const layer = () => { const l = fxLayer(svg); ensureDefs(l); return l; };
   render({ placed: k });
   set(result.placedBoard);
   render({ placed: k });
-  const lines = [];
+  placeFx(layer(), result.placedBoard, k);
   for (const [i, st] of result.steps.entries()) {
-    await wait(STEP_MS);
+    await wait(STEP_MS * 0.6);
     set(st.spawnedBoard);
     render({ pop: new Set(st.spawned.map((s) => s.key)) });
-    const names = countNames(st.spawned);
-    const newIds = [...new Set(st.spawned.map((s) => s.id))].filter((id) => !state.found.includes(id));
-    const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature);
-    lines.push(`${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`
-      + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : ''));
+    spawnFx(layer(), st.spawnedBoard, st.spawned, state.found);
+    lines.push(stepLine(st, i));
     say(lines);
     if (result.steps.length >= 2) chainEl.textContent = `${i + 1}連鎖`;
     await wait(STEP_MS);
+    const travel = actionFx(layer(), st.spawnedBoard, st.board, st);
+    await wait(travel);
     set(st.board);
     render({ flash: new Set(st.changed) });
+    impactFx(layer(), st.spawnedBoard, st.board, st);
+    await wait(STEP_MS * 0.5);
     // 効果がぶつかってマスが変わらなかったら、その段の生き物のうち届く所にいるものが首をかしげる（W5）
     const tilt = tiltKeys(st);
     if (tilt.size) {
-      lines.push(`（${countNames(st.spawned.filter((s) => tilt.has(s.key)))}が首をかしげた：頼みがぶつかって、そのマスは変わらなかった）`);
+      lines.push(tiltLine(st, tilt));
       say(lines);
       render({ tilt });
       await wait(STEP_MS * 2);
@@ -649,9 +679,61 @@ function unlockMessages(from, to) {
 }
 
 // ---- 操作 ----
-svg.addEventListener('click', (e) => {
+// 置く前に知らせる：置いたときに最初（1段目）に出る生き物。見つけていない生き物は ？？？
+function previewText(k) {
+  if (!state.settings.preview || busy || pz) return null;
+  const board = sa ? sa.board : state.board;
+  const itemId = sa ? sa.selected : state.selected;
+  const found = sa ? Infinity : state.found;
+  const item = PLACEABLES.find((p) => p.id === itemId);
+  const c = board.cells[k];
+  if (!c || !item) return null;
+  if (sa && !(stockLeft(sa.m, sa.moves)[itemId] > 0)) return null;
+  if (c.creature && item.kind !== 'release') return `${byId[c.creature].name}（押すと形と効果）`;
+  const [q, r] = parseKey(k);
+  const why = whyNotPlace(board, q, r, itemId, found);
+  if (why) return `${item.name}：ここには置けない（${why}）`;
+  if (item.kind === 'release') return `${byId[c.creature].name}が帰る`;
+  const first = place(board, q, r, itemId, sa ? {} : { found }).steps[0];
+  if (!first) return `${item.name}を置くと → 何も出ない`;
+  const ids = [...new Set(first.spawned.map((s) => s.id))];
+  const names = ids.map((id) => (state.found.includes(id) ? byId[id].name : '？？？'));
+  return `${item.name}を置くと → ${names.join('・')}が出る`;
+}
+function showPreview(k) {
+  const text = k ? previewText(k) : null;
+  $('preview').hidden = !text;
+  if (text) $('preview').textContent = text;
+}
+
+let pressTimer = null;
+let pressed = false;
+svg.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse') return;
   const g = e.target.closest('.cell');
-  if (g) onCell(g.dataset.key);
+  showPreview(g ? g.dataset.key : null);
+});
+svg.addEventListener('pointerleave', () => showPreview(null));
+// スマホ：長押しで知らせる（そのあとの「押した」は置かない）
+svg.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;
+  const g = e.target.closest('.cell');
+  clearTimeout(pressTimer);
+  pressed = false;
+  if (!g) return;
+  pressTimer = setTimeout(() => { pressed = true; showPreview(g.dataset.key); }, 450);
+});
+for (const ev of ['pointerup', 'pointercancel', 'pointermove']) {
+  svg.addEventListener(ev, (e) => { if (ev !== 'pointermove' || Math.abs(e.movementX) + Math.abs(e.movementY) > 6) clearTimeout(pressTimer); });
+}
+svg.addEventListener('contextmenu', (e) => { if (pressed) e.preventDefault(); });
+
+svg.addEventListener('click', (e) => {
+  if (pressed) { pressed = false; return; }
+  const g = e.target.closest('.cell');
+  if (!g) return;
+  showPreview(null);
+  onCell(g.dataset.key).then(() => { if (g.matches(':hover')) showPreview(g.dataset.key); });
 });
 
 $('undo').addEventListener('click', () => {
@@ -723,7 +805,13 @@ function showTab(name) {
   $('ach-panel').hidden = name !== 'achievements';
 }
 for (const b of document.querySelectorAll('.tab')) b.addEventListener('click', () => showTab(b.dataset.tab));
-$('open-help').addEventListener('click', () => $('help').showModal());
+$('open-help').addEventListener('click', () => {
+  $('set-fx').checked = state.settings.fx;
+  $('set-preview').checked = state.settings.preview;
+  $('help').showModal();
+});
+$('set-fx').addEventListener('change', (e) => { state.settings = { ...state.settings, fx: e.target.checked }; save(); });
+$('set-preview').addEventListener('change', (e) => { state.settings = { ...state.settings, preview: e.target.checked }; save(); showPreview(null); });
 $('reset').addEventListener('click', () => {
   if (!confirm('図鑑も島も全部消して最初から？（元に戻せない）')) return;
   state = fresh();
