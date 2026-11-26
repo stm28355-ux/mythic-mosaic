@@ -3,6 +3,7 @@ import { islandCells, toPixel, key } from '../core/hex.js';
 import { ISLAND_STAGES } from '../core/hex.js';
 import { CREATURES } from '../core/creatures.js';
 import { creatureSvg } from '../art/creatures.js';
+import { objectSvg } from '../art/objects.js';
 
 export const SIZE = 30;      // マスの大きさ（中心から頂点）
 const LIFT = 6;              // 高さ1あたりの持ち上げ
@@ -45,30 +46,15 @@ function frame(board) {
   return { shown, viewBox: `${minX} ${minY} ${maxX - minX} ${maxY - minY}` };
 }
 
-// 上に乗る物（木・花・岩・巣）
-function drawObject(kind, x, y, k) {
-  const g = el('g', { class: `obj o-${kind}`, transform: `translate(${x} ${y}) scale(${k})` });
-  if (kind === 'tree') {
-    g.append(el('rect', { x: -2, y: 2, width: 4, height: 8, class: 'trunk' }));
-    g.append(el('polygon', { points: '0,-14 -10,4 10,4', class: 'leaves' }));
-  } else if (kind === 'flower') {
-    for (let i = 0; i < 5; i++) {
-      const a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
-      g.append(el('circle', { cx: (Math.cos(a) * 5).toFixed(1), cy: (Math.sin(a) * 5).toFixed(1), r: 4, class: 'petal' }));
-    }
-    g.append(el('circle', { cx: 0, cy: 0, r: 2.6, class: 'pistil' }));
-  } else if (kind === 'rock') {
-    g.append(el('polygon', { points: '-11,7 -8,-3 -2,-9 6,-7 11,0 10,7', class: 'rock' }));
-    g.append(el('polyline', { points: '-2,-9 0,-1 10,7', class: 'rock-line' }));
-  } else if (kind === 'nest') {
-    g.append(el('ellipse', { cx: 0, cy: 3, rx: 11, ry: 6, class: 'nest' }));
-    g.append(el('ellipse', { cx: 0, cy: 1, rx: 7, ry: 3, class: 'nest-hole' }));
-    for (const dx of [-3, 3]) g.append(el('ellipse', { cx: dx, cy: 0, rx: 2.6, ry: 3.2, class: 'egg' }));
-  }
-  return g;
+// 上に乗る物（木・花・岩・巣）。ドット絵（判定表 第11回 W4）
+const dataUri = (svgText) => `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
+function drawObject(kind, x, y, size) {
+  const art = objectSvg(kind, 32);
+  if (!art) return el('g');
+  return el('image', { href: dataUri(art), x: x - size / 2, y: y - size / 2, width: size, height: size, class: `obj o-${kind}` });
 }
 
-// marks: { placed: key, pop: Set(key), flash: Set(key), hint: key（詰まったときに光る所） }
+// marks: { placed: key, pop: Set(key), flash: Set(key), hint: key（詰まったときに光る所）, tilt: Set(key)（首をかしげる生き物） }
 export function drawBoard(svg, board, marks = {}) {
   const { shown, viewBox } = frame(board);
   svg.setAttribute('viewBox', viewBox);
@@ -102,20 +88,16 @@ export function drawBoard(svg, board, marks = {}) {
       t.textContent = '▲'.repeat(c.height);
       g.append(t);
     }
-    if (c.object) {
-      // 生き物がいると、上の物は左上に小さく寄せる
-      const tx = c.creature ? x - SIZE * 0.5 : x;
-      const ty = c.creature ? y - SIZE * 0.3 : y;
-      g.append(drawObject(c.object, tx, ty, c.creature ? 0.75 : 1));
-    }
+    // 生き物がいないとき、上の物はマスの真ん中に大きく
+    if (c.object && !c.creature) g.append(drawObject(c.object, x, y - 2, ART * 0.9));
     if (c.creature) {
       const look = CREATURE_LOOK[c.creature] ?? { color: '#fff', mark: '？' };
-      const cg = el('g', { class: marks.pop?.has(k) ? 'creature pop' : 'creature' });
+      const cg = el('g', { class: `creature${marks.pop?.has(k) ? ' pop' : ''}${marks.tilt?.has(k) ? ' tilt' : ''}` });
       const art = creatureSvg(c.creature, 32);
       if (art) {
         // ドット絵（工程7）：足もとに小さな影
         cg.append(el('ellipse', { cx: x, cy: y + SIZE * 0.55, rx: SIZE * 0.45, ry: SIZE * 0.12, class: 'art-shadow' }));
-        cg.append(el('image', { href: `data:image/svg+xml;utf8,${encodeURIComponent(art)}`, x: x - ART / 2, y: y - ART / 2 - 2, width: ART, height: ART, class: 'art' }));
+        cg.append(el('image', { href: dataUri(art), x: x - ART / 2, y: y - ART / 2 - 2, width: ART, height: ART, class: 'art' }));
       } else {
         cg.append(el('circle', { cx: x, cy: y, r: SIZE * 0.5, fill: look.color, class: 'token' }));
         const t = el('text', { x, y: y + 6, class: 'token-mark' });
@@ -123,6 +105,14 @@ export function drawBoard(svg, board, marks = {}) {
         cg.append(t);
       }
       g.append(cg);
+      // 生き物がいると、上の物は左上に小さく
+      if (c.object) g.append(drawObject(c.object, x - SIZE * 0.62, y - SIZE * 0.52, ART * 0.45));
+      // 首をかしげる（効果がぶつかってマスが変わらなかった。判定表 第11回 W5）
+      if (marks.tilt?.has(k)) {
+        const q = el('text', { x: x + SIZE * 0.5, y: y - SIZE * 0.5, class: 'tilt-mark' });
+        q.textContent = '？';
+        g.append(q);
+      }
     }
     svg.append(g);
   }

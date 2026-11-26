@@ -1,6 +1,7 @@
-// 生き物の絵（32×32 のドット絵）。工程7 の見本：6匹（組ごとに1匹）。判定表 第11回で見てから24匹に広げる。
+// 生き物の絵（32×32 のドット絵）。工程7：見本6匹（組ごとに1匹）をここに、判定表 第11回で OK のあと描いた18匹は creatures-more.js。
 // 企画まとめ：可愛いドット絵32×32、生き物は顔あり。形で見分ける（丸に統一しない）。上に乗る物（木・岩…）には顔を描かない。
 import { grid, toSvg } from './pixel.js';
+import { MORE } from './creatures-more.js';
 
 const INK = '#1d1a33';
 const P = {
@@ -83,6 +84,8 @@ export const DRAW = {
     .line(1, 27, 7, 27, P.fogLight).line(22, 28, 30, 28, P.fogLight).line(10, 29, 15, 29, P.fog)
     .outline(INK),
 };
+
+Object.assign(DRAW, MORE);
 
 // 絵のある生き物の SVG（なければ null。絵のない生き物は丸と番号のまま）
 const cache = {};

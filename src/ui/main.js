@@ -1,7 +1,7 @@
 // 箱庭と連鎖問題とスコアアタックの画面（工程2 の試作を、工程4 で24匹に、工程5 で連鎖問題に、工程6 でスコアアタックに広げた）。ルールは src/core/rules.js、描くのは view.js。
 import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked, isOpen } from '../core/rules.js';
 import { CREATURES, PLACEABLES, GROUNDS, OBJECTS } from '../core/creatures.js';
-import { parseKey } from '../core/hex.js';
+import { parseKey, distance } from '../core/hex.js';
 import { hintLevel, usesOf, usesShown, newRumors, glowCell, STUCK_MOVES } from '../core/hints.js';
 import { ACHIEVEMENTS, newAchievements } from '../core/achievements.js';
 import { puzzleBoard, puzzleCreatures, puzzleOpen, cleared } from '../core/puzzle.js';
@@ -293,8 +293,27 @@ async function animate(result, k, set) {
     await wait(STEP_MS);
     set(st.board);
     render({ flash: new Set(st.changed) });
+    // 効果がぶつかってマスが変わらなかったら、その段の生き物のうち届く所にいるものが首をかしげる（W5）
+    const tilt = tiltKeys(st);
+    if (tilt.size) {
+      lines.push(`（${countNames(st.spawned.filter((s) => tilt.has(s.key)))}が首をかしげた：頼みがぶつかって、そのマスは変わらなかった）`);
+      say(lines);
+      render({ tilt });
+      await wait(STEP_MS * 2);
+      render();
+    }
   }
   return lines;
+}
+
+// 首をかしげる生き物：その段で出た生き物のうち、ぶつかったマスに効果が届くもの
+const reachOf = (id) => Math.max(1, ...(byId[id].effects ?? [byId[id].effect]).filter(Boolean).map((e) => e.range ?? 1));
+function tiltKeys(st) {
+  if (!st.clashes?.length) return new Set();
+  return new Set(st.spawned.filter((s) => {
+    const [q, r] = parseKey(s.key);
+    return st.clashes.some((cl) => { const [q2, r2] = parseKey(cl.key); return distance(q, r, q2, r2) <= reachOf(s.id); });
+  }).map((s) => s.key));
 }
 
 // ---- 問題 ----

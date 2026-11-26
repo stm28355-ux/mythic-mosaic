@@ -67,15 +67,6 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .future { fill: none; stroke: var(--quiet); stroke-dasharray: 3 3; opacity: 0.35; }
 
 .obj { pointer-events: none; }
-.trunk { fill: #5a3d27; }
-.leaves { fill: #2f6b3a; stroke: #1d4425; stroke-width: 1; }
-.petal { fill: #f7a8c4; stroke: #b4587a; stroke-width: 0.8; }
-.pistil { fill: #ffe07a; }
-.rock { fill: #8e8a84; stroke: #4a4743; stroke-width: 1.2; }
-.rock-line { fill: none; stroke: #5d5a55; stroke-width: 1; }
-.nest { fill: #9a6b3e; stroke: #5a3d22; stroke-width: 1.2; }
-.nest-hole { fill: #5a3d22; }
-.egg { fill: #f5efe0; stroke: #b9ad94; stroke-width: 0.6; }
 
 .creature { pointer-events: none; transform-box: fill-box; transform-origin: center; }
 .creature.pop { animation: pop 0.45s cubic-bezier(.2, 1.6, .5, 1); }
@@ -163,6 +154,9 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .book .token.shadow { background: #11141b; color: var(--quiet); border-color: var(--quiet); }
 .book .token.art { border: none; border-radius: 8px; background: rgb(255 255 255 / 0.06); }
 .art-shadow { fill: rgb(0 0 0 / 0.28); }
+.creature.tilt { animation: tilt 0.5s ease-in-out 2; transform-box: fill-box; transform-origin: 50% 90%; }
+@keyframes tilt { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-14deg); } 70% { transform: rotate(10deg); } }
+.tilt-mark { fill: #ffe07a; font-size: 18px; font-weight: 800; stroke: #1d1a33; stroke-width: 3; paint-order: stroke; pointer-events: none; }
 .book b { margin-right: 6px; }
 .book small { color: var(--quiet); }
 .book p { margin: 0; font-size: 0.9rem; }
