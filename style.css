@@ -57,7 +57,7 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .top.h2 { filter: brightness(1.25); }
 .side { fill: #11141b; opacity: 0.55; }
 .side.h2 { opacity: 0.75; }
-.height-mark { fill: rgb(255 255 255 / 0.75); font-size: 9px; text-anchor: middle; pointer-events: none; }
+.height-mark { fill: rgb(255 255 255 / 0.85); font-size: 13px; font-weight: 700; text-anchor: middle; pointer-events: none; }
 .cell:hover .top { stroke: var(--accent); stroke-width: 2; }
 .top.placed { stroke: var(--accent); stroke-width: 3; }
 .top.flash { animation: flash 0.45s ease-out; }
@@ -75,7 +75,7 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .token-mark { fill: #1a1e27; font-size: 16px; font-weight: 800; text-anchor: middle; }
 
 /* 文 */
-.log { min-height: 3.2em; max-height: 7.5em; overflow-y: auto; background: var(--panel); border-radius: 8px; padding: 6px 10px; font-size: 0.95rem; }
+.log { height: calc(6.4em + 12px); overflow-y: auto; background: var(--panel); border-radius: 8px; padding: 6px 10px; font-size: 0.95rem; }
 .log p { margin: 0; }
 
 /* 置く物 */
@@ -107,6 +107,9 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 
 /* 連鎖問題 */
 .puzzle-bar { display: grid; gap: 6px; }
+.puzzle-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; }
+.puzzle-head .puzzle-hint { flex: none; width: 9.5em; }
+.puzzle-hint.spent { visibility: hidden; }
 .puzzle-title { margin: 0; font-weight: 700; color: var(--accent); }
 .puzzle-queue { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .puzzle-queue .item { cursor: default; }
@@ -188,7 +191,16 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .help-note { color: var(--quiet); font-size: 0.9rem; }
 .help-actions { display: flex; gap: 8px; justify-content: space-between; }
 .danger { border-color: #c56a5a !important; color: #f0a596 !important; }
-.puzzle-note { margin: 0; font-size: 0.9rem; display: grid; gap: 2px; }
-.puzzle-note:empty { display: none; }
+.puzzle-note { margin: 0; font-size: 0.9rem; display: grid; align-content: start; gap: 2px; height: 4.6em; overflow-y: auto; }
 .puzzle-cast summary { cursor: pointer; color: var(--quiet); font-size: 0.9rem; }
 .puzzle-cast .book { margin-top: 6px; }
+
+/* 広い画面（PC）は2列：左に大きな盤、右にログ・置く物・道具・生き物の一覧（判定表 第13回 Y3）。スマホは1列のまま */
+@media (min-width: 1100px) {
+  #app { max-width: 1320px; display: grid; grid-template-columns: minmax(0, 1fr) 440px; column-gap: 24px; align-items: start; }
+  #app > * { grid-column: 2; }
+  #app > .topbar { grid-column: 1 / -1; }
+  #app > .stage { grid-column: 1; grid-row: 2 / span 9; }
+  #board { max-height: calc(100vh - 80px); }
+  .puzzle-cast { max-height: calc(100vh - 480px); overflow: auto; }
+}

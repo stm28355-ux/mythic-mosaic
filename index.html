@@ -7,42 +7,44 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main id="app">
-  <header class="topbar">
+<main id="app" data-ui="app">
+  <header class="topbar" data-ui="topbar">
     <h1>Mythic Mosaic</h1>
     <p class="count"><span id="found-count">0</span> / <span id="found-total">24</span> 匹</p>
   </header>
 
-  <div class="stage">
+  <div class="stage" data-ui="stage">
     <svg id="board" role="img" aria-label="箱庭の島"></svg>
     <p id="chain" class="chain" aria-hidden="true"></p>
   </div>
 
-  <div id="log" class="log" aria-live="polite"></div>
+  <div id="log" class="log" data-ui="log" aria-live="polite"></div>
 
-  <div id="score-bar" class="puzzle-bar" hidden>
+  <div id="score-bar" class="puzzle-bar" data-ui="score-bar" hidden>
     <p id="score-title" class="puzzle-title"></p>
     <div id="score-totals" class="score-totals"></div>
   </div>
 
-  <div class="palette" role="group" aria-label="置く物"></div>
+  <div class="palette" data-ui="palette" role="group" aria-label="置く物"></div>
 
-  <div id="puzzle-bar" class="puzzle-bar" hidden>
-    <p id="puzzle-title" class="puzzle-title"></p>
+  <div id="puzzle-bar" class="puzzle-bar" data-ui="puzzle-bar" hidden>
+    <div class="puzzle-head">
+      <p id="puzzle-title" class="puzzle-title"></p>
+      <button type="button" id="puzzle-hint" class="puzzle-hint" data-act="hint"></button>
+    </div>
     <p id="puzzle-note" class="puzzle-note"></p>
-    <button type="button" id="puzzle-hint" class="puzzle-hint" hidden></button>
     <ol id="puzzle-queue" class="puzzle-queue" aria-label="置く順"></ol>
   </div>
 
-  <nav class="tools">
-    <button type="button" id="undo">1手戻す</button>
-    <button type="button" id="clear">更地にする</button>
-    <button type="button" id="open-puzzles">問題</button>
-    <button type="button" id="open-book">図鑑</button>
-    <button type="button" id="open-help">遊び方</button>
+  <nav class="tools" data-ui="tools">
+    <button type="button" id="undo" data-act="undo">1手戻す</button>
+    <button type="button" id="clear" data-act="clear">更地にする</button>
+    <button type="button" id="open-puzzles" data-act="challenge">挑戦</button>
+    <button type="button" id="open-book" data-act="book">図鑑</button>
+    <button type="button" id="open-help" data-act="help">遊び方</button>
   </nav>
 
-  <details id="puzzle-cast" class="puzzle-cast" open hidden>
+  <details id="puzzle-cast" class="puzzle-cast" data-ui="cast" open hidden>
     <summary>出てくる生き物</summary>
     <ul id="puzzle-cast-list" class="book"></ul>
   </details>
@@ -84,9 +86,9 @@
     <li>生き物の中には、隣の生き物を帰すものもいる。そのときは空いたマスで連鎖が続く。</li>
     <li>生き物を見つけると、まだの生き物の噂を話す。噂は図鑑にも残り、形に使う物も分かる。</li>
     <li>新しい生き物がしばらく出ないと、使う物が分かっている生き物が1手で現れる所が、島の上でほんのり光る。</li>
-    <li>図鑑の「実績」で、取った実績を見られる。</li>
-    <li>「問題」では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。</li>
-    <li>「問題」の一番下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。地図は図鑑の数で開く。点は出た生き物1匹に1点、1手の連鎖が3・5・8段に届くと追加点。</li>
+    <li>図鑑の「実績」で、取った実績を見られる。島の生き物を押すと、名前と形と効果が出る（帰すを選んでいるときは帰す）。</li>
+    <li>「挑戦」の連鎖問題では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。</li>
+    <li>「挑戦」の一番下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。地図は図鑑の数で開く。点は出た生き物1匹に1点、1手の連鎖が3・5・8段に届くと追加点。</li>
   </ol>
   <p class="help-note">生き物の居るマスには置けない（先に帰す）。帰しただけでは連鎖は起きない。地面を置くと上の物（木・花・岩・巣）は消え、高さは残る。岩と巣は地面を変えずに上に置く。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
   <form method="dialog" class="help-actions">

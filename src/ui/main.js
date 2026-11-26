@@ -59,12 +59,14 @@ function save() {
 }
 
 // ---- 表示 ----
+// ログは高さが決まっていて（判定表 第13回 Y1）、いつも新しい行が見えるように下までスクロールする
 function say(lines) {
   log.replaceChildren(...lines.map((t) => {
     const p = document.createElement('p');
     p.textContent = t;
     return p;
   }));
+  log.scrollTop = log.scrollHeight;
 }
 
 // 置く物の並び。スコアアタックでは地図の置ける物だけを、残りの数と一緒に出す
@@ -76,6 +78,8 @@ function renderPalette() {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = `item i-${item.id}`;
+    b.dataset.act = 'item';
+    b.dataset.item = item.id;
     const open = sa ? left[item.id] > 0 : isOpen(item, state.found);
     b.disabled = !open;
     b.setAttribute('aria-pressed', String(selected === item.id));
@@ -97,6 +101,7 @@ function renderCount() {
   $('found-count').textContent = state.found.length;
   $('found-total').textContent = CREATURES.length;
   $('undo').disabled = (pz ? pz.history.length === 0 : sa ? sa.history.length === 0 : history.length === 0) || busy;
+  $('undo').title = $('undo').disabled ? (busy ? '連鎖の途中' : 'まだ戻す手がない') : '1手戻す';
 }
 
 // 3段目：新しい生き物が STUCK_MOVES 手出ないとき、使う物が分かっている生き物が1手で出る所を光らせる
@@ -121,10 +126,10 @@ function renderMode() {
   palette.hidden = Boolean(pz);
   $('puzzle-bar').hidden = !pz;
   $('score-bar').hidden = !sa;
-  $('puzzle-cast').hidden = !pz;
+  $('puzzle-cast').hidden = !(pz || sa);
   $('clear').textContent = pz || sa ? 'やり直す' : '更地にする';
-  $('open-puzzles').textContent = pz || sa ? '箱庭へ' : '問題';
-  if (sa) renderScoreBar();
+  $('open-puzzles').textContent = pz || sa ? '箱庭へ' : '挑戦';
+  if (sa) { renderScoreBar(); renderScoreCast(); }
   if (!pz) return;
   const p = pz.p;
   $('puzzle-title').textContent = `${p.title}　${p.items.length}手で${p.target}連鎖`;
@@ -142,30 +147,53 @@ function renderMode() {
   }
   $('puzzle-note').replaceChildren(...notes.map((t) => Object.assign(document.createElement('span'), { textContent: t })));
   const nextHint = p.intro ? 0 : pz.hints + 1;
-  $('puzzle-hint').hidden = !((nextHint === 1 && p.note) || ((nextHint === 2 || nextHint === 3) && first));
-  $('puzzle-hint').textContent = ['', 'ヒント1を見る（ねらい）', 'ヒント2を見る（1手目の所）', '答えを見る'][nextHint] ?? '';
+  // ボタンは使い切っても場所を取ったまま（判定表 第13回 Y2：押す場所を動かさない）
+  $('puzzle-hint').classList.toggle('spent', !((nextHint === 1 && p.note) || ((nextHint === 2 || nextHint === 3) && first)));
+  $('puzzle-hint').textContent = ['', 'ヒント1（ねらい）', 'ヒント2（1手目）', '答えを見る'][nextHint] ?? '';
   // 出てくる生き物の形と効果（判定表 第7回：組み合わせを覚えていなくても考えられるように）
   if ($('puzzle-cast').dataset.for !== p.id) {
     $('puzzle-cast').dataset.for = p.id;
-    const ids = puzzleCreatures(p).sort((a, b) => byId[a].no - byId[b].no);
-    $('puzzle-cast').querySelector('summary').textContent = `出てくる生き物（${ids.length}）`;
-    $('puzzle-cast-list').replaceChildren(...ids.map((id) => {
-      const c = byId[id];
-      const li = document.createElement('li');
-      li.className = 'found';
-      li.innerHTML = `${tokenHtml(id)}
-        <div><b>${c.name}</b><p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
-      return li;
-    }));
+    $('puzzle-cast').open = true;
+    fillCast(puzzleCreatures(p), '出てくる生き物');
   }
   $('puzzle-queue').replaceChildren(...p.items.map((id, i) => {
     const item = PLACEABLES.find((x) => x.id === id);
     const li = document.createElement('li');
     li.className = `item i-${id}${i < pz.step ? ' used' : ''}${i === pz.step && !pz.done ? ' now' : ''}`;
     li.innerHTML = `<span class="swatch"></span><span class="label">${i + 1}. ${item.name}</span>`
-      + (i < pz.step ? `<span class="lock">${pz.chains[i]}連鎖</span>` : '');
+      // 連鎖の数の行は、置く前から場所を取っておく（置いても下の道具が動かないように。判定表 第13回 Y2）
+      + `<span class="lock">${i < pz.step ? `${pz.chains[i]}連鎖` : '　'}</span>`;
     return li;
   }));
+}
+
+// 「出てくる生き物」の一覧（形と効果）
+function fillCast(ids, label) {
+  const sorted = [...ids].sort((a, b) => byId[a].no - byId[b].no);
+  $('puzzle-cast').querySelector('summary').textContent = `${label}（${sorted.length}）`;
+  $('puzzle-cast-list').replaceChildren(...sorted.map((id) => {
+    const c = byId[id];
+    const li = document.createElement('li');
+    li.className = 'found';
+    li.innerHTML = `${tokenHtml(id)}
+      <div><b>${c.name}</b><p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
+    return li;
+  }));
+}
+
+// スコアアタックは、見つけた生き物を全部（閉じた状態で出す。判定表 第13回 Y5）
+function renderScoreCast() {
+  const key = `score:${sa.m.id}:${state.found.length}`;
+  if ($('puzzle-cast').dataset.for === key) return;
+  if (!String($('puzzle-cast').dataset.for).startsWith(`score:${sa.m.id}:`)) $('puzzle-cast').open = false;
+  $('puzzle-cast').dataset.for = key;
+  fillCast(state.found, '見つけた生き物');
+}
+
+// 島の生き物を押したときの説明（判定表 第13回 Y4）
+function creatureLines(id) {
+  const c = byId[id];
+  return [`${c.name}（${c.title}）`, `形：${shapeText(c)}`, `効果：${c.text}`];
 }
 
 function renderBook() {
@@ -351,6 +379,7 @@ async function onPuzzleCell(k) {
   if (!item) { say(['置く物はもう無い。やり直すか、1手戻して別の所に置いてみよう']); return; }
   const [q, r] = parseKey(k);
   const why = whyNotPlace(pz.board, q, r, item);
+  if (why && pz.board.cells[k]?.creature) { say(creatureLines(pz.board.cells[k].creature)); return; }
   if (why) { say([`ここには置けない（${why}）`]); return; }
   busy = true;
   pz.history.push({ board: pz.board, chains: [...pz.chains] });
@@ -471,6 +500,7 @@ async function onScoreCell(k) {
   if (!(left[sa.selected] > 0)) sa.selected = Object.keys(left).find((id) => left[id] > 0);
   const [q, r] = parseKey(k);
   const why = whyNotPlace(sa.board, q, r, sa.selected);
+  if (why && sa.board.cells[k]?.creature) { say(creatureLines(sa.board.cells[k].creature)); return; }
   if (why) { say([`ここには置けない（${why}）`]); return; }
   busy = true;
   const before = sa.board;
@@ -549,6 +579,7 @@ async function onCell(k) {
   const [q, r] = parseKey(k);
   if (!isOpen(PLACEABLES.find((p) => p.id === state.selected), state.found)) state.selected = 'water';
   const why = whyNotPlace(state.board, q, r, state.selected, state.found);
+  if (why && state.board.cells[k]?.creature) { say(creatureLines(state.board.cells[k].creature)); return; }
   if (why) {
     say([`ここには置けない（${why}）`]);
     return;
@@ -704,6 +735,20 @@ $('reset').addEventListener('click', () => {
   render();
   renderPalette();
 });
+
+// 今の状態を文字で返す（判定表 第13回 Y10：AI が画面を読んで確かめるため。遊びには使わない）
+window.describeUI = () => {
+  const board = viewBoard();
+  const cells = Object.values(board.cells);
+  const lines = [];
+  if (pz) lines.push(`場所：連鎖問題「${pz.p.title}」${pz.p.items.length}手で${pz.p.target}連鎖。${pz.step + 1}手目の置く物：${pz.p.items[pz.step] ?? 'なし'}${pz.done ? '（クリア）' : ''}。ヒント ${pz.hints}`);
+  else if (sa) lines.push(`場所：スコアアタック「${sa.m.title}」残り${Object.values(stockLeft(sa.m, sa.moves)).reduce((a, b) => a + b, 0)}手。点 ${sa.moves.reduce((s, m) => s + m.score, 0)}。選んだ物：${sa.selected}`);
+  else lines.push(`場所：箱庭（${cells.length}マス）。選んだ物：${state.selected}`);
+  lines.push(`図鑑：${state.found.length}/${CREATURES.length}匹。盤の生き物：${cells.filter((c) => c.creature).length}匹。光る所：${pz ? answerHint() ?? 'なし' : sa ? 'なし' : glow() ?? 'なし'}`);
+  lines.push(`押せる物：${[...document.querySelectorAll('[data-act]')].filter((b) => !b.disabled && !b.closest('[hidden]') && !b.closest('dialog:not([open])')).map((b) => b.dataset.item ? `item:${b.dataset.item}` : b.dataset.act).join(' ')}`);
+  lines.push(`ログ：${[...log.children].map((p) => p.textContent).join(' / ')}`);
+  return lines.join('\n');
+};
 
 $('version').textContent = APP_VERSION;
 checkAchievements({}); // 前の記録からも、図鑑と島の実績はさかのぼって取れる（K3）
