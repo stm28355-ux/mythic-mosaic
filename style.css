@@ -125,6 +125,14 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
   justify-self: start; min-height: 40px; padding: 0 14px; border: 1px solid var(--quiet); border-radius: 8px;
   background: transparent; color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer;
 }
+.puzzle-groups { display: grid; gap: 6px; margin-bottom: 12px; }
+.puzzle-group summary { cursor: pointer; min-height: 40px; display: flex; align-items: center; padding: 0 4px; border-bottom: 1px solid rgb(255 255 255 / 0.08); }
+.puzzle-group[open] summary { color: var(--accent); }
+.puzzle-group summary { list-style: none; }
+.puzzle-group summary::-webkit-details-marker { display: none; }
+.puzzle-group summary::before { content: "▸"; width: 1.4em; text-align: center; color: var(--quiet); }
+.puzzle-group[open] summary::before { content: "▾"; }
+.puzzle-group .ach { margin: 6px 0 4px; }
 .puzzle-list li { align-items: center; }
 .puzzle-list li > div { flex: 1; }
 .puzzle-list li.locked b { color: var(--quiet); }

@@ -98,7 +98,7 @@ function glow() {
 }
 
 function render(marks = {}) {
-  drawBoard(svg, viewBoard(), busy ? marks : pz ? { ...marks, hint: firstMoveHint() } : { ...marks, hint: glow() });
+  drawBoard(svg, viewBoard(), busy ? marks : pz ? { ...marks, hint: answerHint() } : { ...marks, hint: glow() });
   renderCount();
   renderMode();
 }
@@ -114,16 +114,22 @@ function renderMode() {
   if (!pz) return;
   const p = pz.p;
   $('puzzle-title').textContent = `${p.title}　${p.items.length}手で${p.target}連鎖`;
-  // ねらい：入門は初めから出す。ほかはヒント1として伏せ、ヒント2で1手目の所を光らせる（判定表 第8回 R5）
+  // ねらい：入門は初めから出す。ほかはヒント1として伏せ、ヒント2で1手目の所を光らせる（判定表 第8回 R5）。
+  // ヒント3は答え：答えどおりに置いている間、次に置く所を光らせる（判定表 第9回：むずかしくて答えを見たかった）
   const shown = p.intro ? 1 : pz.hints;
   const first = p.example?.[0];
   const notes = [];
   if (shown >= 1 && p.note) notes.push(`${p.intro ? '' : 'ヒント1　'}ねらい：${p.note}`);
-  if (shown >= 2 && first) notes.push(pz.step === 0 ? 'ヒント2　1手目は光る所に置く' : 'ヒント2　1手目は光る所（やり直すと光る）');
+  if (shown === 2 && first) notes.push(pz.step === 0 ? 'ヒント2　1手目は光る所に置く' : 'ヒント2　1手目は光る所（やり直すと光る）');
+  if (shown >= 3 && first) {
+    notes.push(pz.done ? '答え：これで届いた' : onAnswer()
+      ? `答え：光る所に順に置く（${pz.step + 1}手目／${p.example.length}手）`
+      : '答え：答えとちがう所に置いた。1手戻すか、やり直すと光る');
+  }
   $('puzzle-note').replaceChildren(...notes.map((t) => Object.assign(document.createElement('span'), { textContent: t })));
   const nextHint = p.intro ? 0 : pz.hints + 1;
-  $('puzzle-hint').hidden = !((nextHint === 1 && p.note) || (nextHint === 2 && first));
-  $('puzzle-hint').textContent = nextHint === 1 ? 'ヒント1を見る（ねらい）' : 'ヒント2を見る（1手目の所）';
+  $('puzzle-hint').hidden = !((nextHint === 1 && p.note) || ((nextHint === 2 || nextHint === 3) && first));
+  $('puzzle-hint').textContent = ['', 'ヒント1を見る（ねらい）', 'ヒント2を見る（1手目の所）', '答えを見る'][nextHint] ?? '';
   // 出てくる生き物の形と効果（判定表 第7回：組み合わせを覚えていなくても考えられるように）
   if ($('puzzle-cast').dataset.for !== p.id) {
     $('puzzle-cast').dataset.for = p.id;
@@ -271,16 +277,21 @@ async function animate(result, k, set) {
 }
 
 // ---- 問題 ----
-// ヒント2：まだ1手も置いていないとき、正解の例の1手目を光らせる
-function firstMoveHint() {
-  if (!pz || pz.p.intro || pz.hints < 2 || pz.step !== 0) return null;
-  return pz.p.example?.[0] ?? null;
+// ここまで答え（正解の例）どおりに置いているか
+const onAnswer = () => pz.moves.every((k, i) => k === pz.p.example[i]);
+
+// ヒント2：まだ1手も置いていないとき、正解の例の1手目を光らせる。
+// ヒント3（答え）：答えどおりに置いている間、次の手の所を光らせる
+function answerHint() {
+  if (!pz || pz.p.intro || pz.hints < 2 || pz.done) return null;
+  if (pz.hints === 2) return pz.step === 0 ? pz.p.example?.[0] ?? null : null;
+  return onAnswer() ? pz.p.example?.[pz.step] ?? null : null;
 }
 
 function startPuzzle(p) {
   // やり直しても、見たヒントはそのまま
   const hints = pz && pz.p.id === p.id ? pz.hints : 0;
-  pz = { p, board: puzzleBoard(p), step: 0, chains: [], history: [], done: false, hints };
+  pz = { p, board: puzzleBoard(p), step: 0, chains: [], moves: [], history: [], done: false, hints };
   chainEl.textContent = '';
   say([`下の置く物を順に置いて、${p.items.length}手のうちに${p.target}連鎖を出そう（どの手で出してもよい）`]);
   render();
@@ -303,6 +314,7 @@ async function onPuzzleCell(k) {
   if (why) { say([`ここには置けない（${why}）`]); return; }
   busy = true;
   pz.history.push({ board: pz.board, chains: [...pz.chains] });
+  pz.moves.push(k);
   const result = place(pz.board, q, r, item);
   chainEl.textContent = '';
   const lines = await animate(result, k, (b) => { pz.board = b; });
@@ -324,27 +336,52 @@ async function onPuzzleCell(k) {
   render();
 }
 
+// 一覧は狙いごとにまとめてたたむ（判定表 第9回 T5）。入門は1つの組。開いておくのは、まだ解いていない開いた問題のある最初の組
 function renderPuzzleList() {
-  $('puzzle-list').replaceChildren(...PUZZLES.map((p) => {
-    const li = document.createElement('li');
-    const open = TEST_OPEN || puzzleOpen(p, state.found);
-    const done = state.cleared.includes(p.id);
-    const names = p.items.map((id) => PLACEABLES.find((x) => x.id === id).name).join('→');
-    li.className = done ? 'done' : open ? 'open' : 'locked';
-    if (open) {
-      li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div><b>${p.title}</b>
-        <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p>${p.intro && p.note ? `<p class="reward">ねらい：${p.note}</p>` : ''}</div>`;
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = '遊ぶ';
-      b.addEventListener('click', () => { $('puzzles').close(); startPuzzle(p); });
-      li.append(b);
-    } else {
-      const left = puzzleCreatures(p).filter((id) => !state.found.includes(id)).length;
-      li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>図鑑であと${left}匹見つけると開く</p></div>`;
-    }
-    return li;
+  const groups = [];
+  for (const p of PUZZLES) {
+    const id = p.intro ? 'intro' : p.aim;
+    let g = groups.find((x) => x.id === id);
+    if (!g) groups.push(g = { id, name: p.intro ? '入門' : p.title.replace(/ \d+$/, ''), list: [] });
+    g.list.push(p);
+  }
+  const isOpen = (p) => TEST_OPEN || puzzleOpen(p, state.found);
+  const next = groups.find((g) => g.list.some((p) => isOpen(p) && !state.cleared.includes(p.id)));
+  $('puzzle-list').replaceChildren(...groups.map((g) => {
+    const d = document.createElement('details');
+    d.className = 'puzzle-group';
+    d.open = g === next;
+    const done = g.list.filter((p) => state.cleared.includes(p.id)).length;
+    const opened = g.list.filter(isOpen).length;
+    const s = document.createElement('summary');
+    s.textContent = `${opened ? g.name : '？？？'}　★${done}/${g.list.length}`;
+    const ol = document.createElement('ol');
+    ol.className = 'ach puzzle-list';
+    ol.replaceChildren(...g.list.map(puzzleItem));
+    d.append(s, ol);
+    return d;
   }));
+}
+
+function puzzleItem(p) {
+  const li = document.createElement('li');
+  const open = TEST_OPEN || puzzleOpen(p, state.found);
+  const done = state.cleared.includes(p.id);
+  const names = p.items.map((id) => PLACEABLES.find((x) => x.id === id).name).join('→');
+  li.className = done ? 'done' : open ? 'open' : 'locked';
+  if (open) {
+    li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div><b>${p.title}</b>
+      <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p>${p.intro && p.note ? `<p class="reward">ねらい：${p.note}</p>` : ''}</div>`;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = '遊ぶ';
+    b.addEventListener('click', () => { $('puzzles').close(); startPuzzle(p); });
+    li.append(b);
+  } else {
+    const left = puzzleCreatures(p).filter((id) => !state.found.includes(id)).length;
+    li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>図鑑であと${left}匹見つけると開く</p></div>`;
+  }
+  return li;
 }
 
 // ---- 置く ----
@@ -436,6 +473,7 @@ $('undo').addEventListener('click', () => {
     pz.board = h.board;
     pz.chains = h.chains;
     pz.step = h.chains.length;
+    pz.moves = pz.moves.slice(0, pz.step);
     pz.done = cleared(pz.chains, pz.p.target);
     chainEl.textContent = '';
     say(['1手戻した']);
@@ -466,7 +504,7 @@ $('clear').addEventListener('click', () => {
 
 $('puzzle-hint').addEventListener('click', () => {
   if (!pz || busy) return;
-  pz.hints = Math.min(2, pz.hints + 1);
+  pz.hints = Math.min(3, pz.hints + 1);
   render();
 });
 

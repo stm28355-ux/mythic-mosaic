@@ -7,6 +7,7 @@
 // 盤をたくさん作り、狙いに合う物だけ残す（企画まとめ「連鎖問題の作り方」）：
 //   - 狙いの生き物が、目標に届いた手の連鎖に入る（狙いの生き物を決めない段は見ない）
 //   - 素直な置き方（毎手その手で一番長い連鎖）では届かない（入門と、やさしい段は見ない）
+//   - どの手も要る（1手を抜くと届かない）
 //   - 出てくる生き物は、狙いが決めた生き物だけ（問題は「出てくる生き物を図鑑で全部見つけたら」開く）
 // 残った盤は、解き方の変わらない物を除いて（荒れ地に戻して）すっきりさせる（判定表 第7回：余分な物が多いと狙いが分からない）。
 // 狙いの3問は、入門寄り（1〜2手）→中くらい→むずかしいの3段にする（判定表 第8回 R7）。
@@ -221,6 +222,8 @@ function judge(C, allow, board, items) {
   const greedy = greedyBest(board, items);
   if (!C.intro && !C.easy && greedy >= all.best) return { why: '素直な置き方で届く' };
   if (C.maxRatio && all.solutions / all.leaves > C.maxRatio) return { why: '正解が多すぎる' };
+  // どの手も要る：1手を抜いた置き方では目標に届かない（判定表 第9回：蓮と虹 1 の丘が要らなかった）
+  if (items.length > 1 && items.some((_, i) => solveAll(board, items.filter((__, j) => j !== i), { catalog: CREATURES }).best >= all.best)) return { why: '要らない手がある' };
   return { all, greedy };
 }
 

@@ -48,6 +48,10 @@ for (const p of PUZZLES) {
     const all = solveAll(board, p.items, { aim: p.creature });
     assert.equal(all.best, p.target);
     if (p.creature) assert.ok(all.withAim > 0, '狙いの生き物が正解に入る');
+    // どの手も要る（1手を抜くと届かない）
+    p.items.forEach((_, i) => {
+      if (p.items.length > 1) assert.ok(solveAll(board, p.items.filter((__, j) => j !== i)).best < p.target, `${i + 1}手目が要る`);
+    });
     assert.deepEqual([...all.appear].sort(), p.appear);
   });
 }
