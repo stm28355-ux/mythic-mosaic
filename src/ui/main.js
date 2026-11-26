@@ -7,7 +7,7 @@ import { ACHIEVEMENTS, newAchievements } from '../core/achievements.js';
 import { puzzleBoard, puzzleCreatures, puzzleOpen, cleared } from '../core/puzzle.js';
 import { PUZZLES } from '../data/puzzles.js';
 import { MAPS } from '../data/maps.js';
-import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, SCORE_METHODS } from '../core/score.js';
+import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, bestScore, SCORE_TEXT } from '../core/score.js';
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
 
@@ -227,7 +227,7 @@ async function toast(text) {
 }
 
 function checkAchievements(ctx) {
-  const got = newAchievements(state.achieved, { board: state.board, found: state.found, cleared: state.cleared, ...ctx });
+  const got = newAchievements(state.achieved, { board: state.board, found: state.found, cleared: state.cleared, best: state.best, ...ctx });
   if (!got.length) return;
   state.achieved = [...state.achieved, ...got];
   for (const id of got) toast(`実績：${ACHIEVEMENTS.find((a) => a.id === id).name}`);
@@ -398,8 +398,8 @@ function puzzleItem(p) {
 }
 
 // ---- スコアアタック（工程6）----
-// 点は2通り（a 上限付きの足し算・b 節目で追加点）を並べて数える。判定表 第10回で1つに決める
-const totalOf = (method) => sa.moves.reduce((s, m) => s + m[method], 0);
+// 点は節目で追加点（1匹1点、3・5・8段で +3・+5・+8。判定表 第10回）。星は地図ごとの ★1・★2・★3 の点
+const totalOf = () => sa.moves.reduce((s, m) => s + m.score, 0);
 const movesOf = (m) => Object.values(m.stock).reduce((a, b) => a + b, 0);
 const starText = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
 
@@ -408,22 +408,24 @@ function renderScoreBar() {
   const left = movesOf(m) - sa.moves.length;
   $('score-title').textContent = `${m.title}　残り${left}手`;
   const last = sa.moves.at(-1);
-  $('score-totals').replaceChildren(...Object.entries(SCORE_METHODS).map(([k, sm]) => {
-    const total = totalOf(k);
-    const stars = starsOf(m, k, total);
-    const next = m.stars[k][stars];
-    const p = document.createElement('p');
-    p.className = 'score-line';
-    p.innerHTML = `<b>${k} ${sm.name}</b><span class="score-num">${total}点</span><span class="score-stars">${starText(stars)}</span>`
-      + `<small>${next !== undefined ? `次の★まで${next - total}` : '★3'}${last ? `　前の手 +${last[k]}` : ''}</small>`;
-    return p;
-  }));
+  const total = totalOf();
+  const stars = starsOf(m, total);
+  const next = m.stars[stars];
+  const best = bestScore(state.best[m.id]);
+  const p = document.createElement('p');
+  p.className = 'score-line';
+  p.innerHTML = `<span class="score-num">${total}点</span><span class="score-stars">${starText(stars)}</span>`
+    + `<small>${next !== undefined ? `次の★まで${next - total}` : '★3'}${last ? `　前の手 +${last.score}` : ''}${best ? `　記録 ${best}点` : ''}</small>`;
+  const rule = document.createElement('p');
+  rule.className = 'score-rule';
+  rule.textContent = SCORE_TEXT;
+  $('score-totals').replaceChildren(p, rule);
 }
 
 function startScore(m) {
   sa = { m, board: mapBoard(m), moves: [], history: [], selected: Object.keys(m.stock)[0] };
   chainEl.textContent = '';
-  say([`置ける物を全部（${movesOf(m)}手）置いて、点を集めよう。点は2通り数えて並べている（遊んでくらべる）`]);
+  say([`置ける物を全部（${movesOf(m)}手）好きな順に置いて、点を集めよう。★1は${m.stars[0]}点`]);
   render();
   renderPalette();
 }
@@ -449,23 +451,21 @@ async function onScoreCell(k) {
   chainEl.textContent = '';
   const lines = await animate(result, k, (b) => { sa.board = b; });
   sa.history.push(before);
-  sa.moves.push({ key: k, item: sa.selected, a: moveScore(result.steps, 'a'), b: moveScore(result.steps, 'b'), chain: result.steps.length });
-  // スコアアタックで初めて出た生き物も図鑑に入る
+  sa.moves.push({ key: k, item: sa.selected, score: moveScore(result.steps), chain: result.steps.length });
+  // スコアアタックで初めて出た生き物も図鑑に入る（第10回 U5）
   state.found = recordFound(state, result.steps).found;
   const u = unlocked(state.found);
   if (u.stage > state.board.stage) state.board = growIsland(state.board, u.stage);
-  checkAchievements({ steps: result.steps });
   if (result.steps.length === 0) lines.push('何も起きなかった');
   if (result.steps.length >= 2) lines.push(`${result.steps.length}連鎖！`);
-  const last = sa.moves.at(-1);
-  lines.push(`この手：a +${last.a}点　b +${last.b}点`);
+  lines.push(`この手 +${sa.moves.at(-1).score}点`);
   if (sa.moves.length === movesOf(sa.m)) {
-    const a = totalOf('a');
-    const b = totalOf('b');
-    const best = state.best[sa.m.id] ?? { a: 0, b: 0 };
-    state.best = { ...state.best, [sa.m.id]: { a: Math.max(best.a, a), b: Math.max(best.b, b) } };
-    lines.push(`終わり！　a ${a}点 ${starText(starsOf(sa.m, 'a', a))}　b ${b}点 ${starText(starsOf(sa.m, 'b', b))}`);
+    const total = totalOf();
+    const before = bestScore(state.best[sa.m.id]);
+    state.best = { ...state.best, [sa.m.id]: Math.max(before, total) };
+    lines.push(`終わり！　${total}点 ${starText(starsOf(sa.m, total))}${total > before ? '（記録を更新）' : ''}`);
   }
+  checkAchievements({ steps: result.steps });
   const nl = stockLeft(sa.m, sa.moves);
   if (!(nl[sa.selected] > 0)) sa.selected = Object.keys(nl).find((id) => nl[id] > 0) ?? sa.selected;
   say(lines);
@@ -481,10 +481,11 @@ function scoreGroup() {
   d.className = 'puzzle-group';
   const isOpenMap = (m) => TEST_OPEN || mapOpen(m, state.found);
   const s = document.createElement('summary');
-  s.textContent = `スコアアタック　${MAPS.filter(isOpenMap).length}/${MAPS.length}面`;
+  const starsAll = MAPS.reduce((n, m) => n + starsOf(m, bestScore(state.best[m.id])), 0);
+  s.textContent = `スコアアタック　★${starsAll}/${MAPS.length * 3}`;
   const note = document.createElement('p');
   note.className = 'book-note';
-  note.textContent = '置ける物を自由な順に全部置いて、点を集める。点の付け方を2通り並べて数えている（試し）。';
+  note.textContent = `置ける物を自由な順に全部置いて、点を集める。${SCORE_TEXT}。`;
   const ol = document.createElement('ol');
   ol.className = 'ach puzzle-list';
   ol.replaceChildren(...MAPS.map((m) => {
@@ -494,13 +495,14 @@ function scoreGroup() {
       li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>図鑑で${m.unlockAt}匹見つけると開く</p></div>`;
       return li;
     }
-    const best = state.best[m.id];
+    const best = bestScore(state.best[m.id]);
+    const stars = starsOf(m, best);
     const cells = Object.keys(mapBoard(m).cells).length;
     const names = Object.entries(m.stock).map(([id, n]) => `${PLACEABLES.find((x) => x.id === id).name}${n}`).join('・');
-    li.className = best ? 'done' : 'open';
-    li.innerHTML = `<span class="ach-mark">${best ? '★' : '☆'}</span><div><b>${m.title}</b>
+    li.className = stars ? 'done' : 'open';
+    li.innerHTML = `<span class="ach-mark">${stars ? '★' : '☆'}</span><div><b>${m.title}</b>
       <p>${cells}マス・${movesOf(m)}手　置く物：${names}</p>
-      <p class="reward">${best ? `記録：a ${best.a}点 ${starText(starsOf(m, 'a', best.a))}　b ${best.b}点 ${starText(starsOf(m, 'b', best.b))}` : 'まだ遊んでいない'}</p></div>`;
+      <p class="reward">${state.best[m.id] !== undefined ? `記録 ${best}点 ${starText(stars)}` : 'まだ遊んでいない'}　★の点：${m.stars.join('・')}</p></div>`;
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = '遊ぶ';

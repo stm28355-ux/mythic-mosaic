@@ -128,7 +128,7 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .puzzle-groups { display: grid; gap: 6px; margin-bottom: 12px; }
 .score-totals { display: grid; gap: 4px; }
 .score-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 0.9rem; }
-.score-line b { min-width: 9.5em; }
+.score-rule { margin: 0; color: var(--quiet); font-size: 0.8rem; }
 .score-num { font-weight: 700; color: var(--accent); }
 .score-stars { color: var(--accent); letter-spacing: 1px; }
 .score-line small { color: var(--quiet); }

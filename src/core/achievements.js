@@ -4,6 +4,8 @@
 import { CREATURES, GROUNDS } from './creatures.js';
 import { rumorHeard } from './hints.js';
 import { PUZZLES } from '../data/puzzles.js';
+import { MAPS } from '../data/maps.js';
+import { starsOf, bestScore } from './score.js';
 
 const has = (found, ids) => ids.every((id) => found.includes(id));
 const groupIds = (g) => CREATURES.filter((c) => c.group === g).map((c) => c.id);
@@ -12,7 +14,7 @@ const spawnedAll = (steps) => steps.flatMap((s) => s.spawned);
 // その段で効果により帰ったマス（spawnedBoard では居て、段のあとに居ない）
 const goneIn = (st) => Object.keys(st.board.cells).filter((k) => st.spawnedBoard.cells[k].creature && !st.board.cells[k].creature);
 
-// ctx: { steps, before, board, found, cleared, puzzleOnly }（puzzleOnly＝問題の盤なので、問題の実績だけ見る）
+// ctx: { steps, before, board, found, cleared, best, puzzleOnly }（puzzleOnly＝問題の盤なので、問題の実績だけ見る）
 //   steps … 今の手の段（帰す・読み込み直後は []）、before … 手の前の盤（無いときは null）、
 //   board … 手の後の盤、found … 手の後の図鑑
 const group = (id, name, g, reward) => ({
@@ -57,11 +59,11 @@ export const ACHIEVEMENTS = Object.freeze([
     check: ({ board }) => board.stage >= 2 && cellsOf(board).every((c) => c.creature) },
   { id: 'high20', kind: '島', name: '高い島', text: '高さ2のマスが20', reward: '称号', check: ({ board }) => cellsOf(board).filter((c) => c.height === 2).length >= 20 },
 
-  // スコアは工程6で遊びができてから判定を入れる
   { id: 'puzzle1', kind: '問題とスコア', name: 'はじめの一問', text: '連鎖問題を1問解く', reward: '称号', puzzle: true, check: ({ cleared }) => cleared.length >= 1 },
   { id: 'puzzleAll', kind: '問題とスコア', name: '連鎖の達人', text: '連鎖問題を全部解く', reward: '図鑑の枠（虹）', puzzle: true,
     check: ({ cleared }) => PUZZLES.length > 0 && PUZZLES.every((p) => cleared.includes(p.id)) },
-  { id: 'scoreAll', kind: '問題とスコア', name: '島づくりの名人', text: 'スコアアタックの全部の面で目標点', reward: '島の飾り：灯台', later: '工程6', check: () => false },
+  { id: 'scoreAll', kind: '問題とスコア', name: '島づくりの名人', text: 'スコアアタックの全部の面で★2', reward: '島の飾り：灯台', puzzle: true,
+    check: ({ best = {} }) => MAPS.every((m) => starsOf(m, bestScore(best[m.id])) >= 2) },
 
   // ふしぎ：取るまで名前も条件も隠し、なぞかけ（teaser）だけ出す（K5）
   { id: 'clash', kind: 'ふしぎ', hidden: true, name: '首かしげ', text: '効果がぶつかって、そのマスが変わらない', teaser: '生き物どうしの頼みごとが、ぶつかると…？', reward: '称号',

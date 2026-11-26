@@ -1,7 +1,7 @@
 // スコアアタック（工程6）。企画まとめ「進み方」：荒れ地のある決まった地図に、数の決まった物を自由に置いて点を狙う。
-// 点の付け方は2通りを試作でくらべて決める（企画まとめ「点の付け方」、判定表 第1回）：
-//   a 上限付きの足し算 … 1手の連鎖の n段目に n点（4段目からは4点）
-//   b 節目で追加点     … 出た生き物1匹に1点。1手の連鎖が 3・5・8 段に届くと、そのたびに +3・+5・+8
+// 点の付け方（判定表 第10回で b に決めた。「何匹も出すことに意味がある方がよい」）：
+//   節目で追加点 … 出た生き物1匹に1点。1手の連鎖が 3・5・8 段に届くと、そのたびに +3・+5・+8
+//   （試作でくらべた「上限付きの足し算」＝n段目に n点・4段目からは4点、は使わない）
 // 地図は src/data/maps.js。ここには、地図から盤を作る・点を数える・星を数える関数を置く。
 import { key } from './hex.js';
 
@@ -39,16 +39,11 @@ export function mapBoard(map) {
   return { stage: 0, puzzle: true, cells };
 }
 
-export const SCORE_METHODS = Object.freeze({
-  a: { name: '上限付きの足し算', text: '1手の連鎖の n段目に n点（4段目からは4点）' },
-  b: { name: '節目で追加点', text: '出た生き物1匹に1点。1手の連鎖が3・5・8段に届くと +3・+5・+8' },
-});
-export const STEP_CAP = 4;
+export const SCORE_TEXT = '出た生き物1匹に1点。1手の連鎖が3・5・8段に届くと +3・+5・+8';
 export const MILESTONES = Object.freeze([[3, 3], [5, 5], [8, 8]]);
 
 // 1手の点。steps は place() の steps（段の並び）
-export function moveScore(steps, method) {
-  if (method === 'a') return steps.reduce((s, _, i) => s + Math.min(i + 1, STEP_CAP), 0);
+export function moveScore(steps) {
   const creatures = steps.reduce((s, st) => s + st.spawned.length, 0);
   return creatures + MILESTONES.filter(([n]) => steps.length >= n).reduce((s, [, bonus]) => s + bonus, 0);
 }
@@ -60,10 +55,13 @@ export function stockLeft(map, moves) {
   return left;
 }
 
-// 星の数（0〜3）：map.stars[method] は ★1・★2・★3 に要る点
-export function starsOf(map, method, score) {
-  return (map.stars?.[method] ?? []).filter((t) => score >= t).length;
+// 星の数（0〜3）：map.stars は ★1・★2・★3 に要る点
+export function starsOf(map, score) {
+  return (map.stars ?? []).filter((t) => score >= t).length;
 }
+
+// 保存した記録（0.9.0 は { a, b } で残した。b が今の点）
+export const bestScore = (v) => (typeof v === 'number' ? v : v?.b ?? 0);
 
 // 地図が開いているか：見つけた生き物の数
 export function mapOpen(map, found) {

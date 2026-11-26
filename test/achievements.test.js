@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { ACHIEVEMENTS, newAchievements } from '../src/core/achievements.js';
 import { CREATURES } from '../src/core/creatures.js';
 import { createBoard, place } from '../src/core/rules.js';
+import { MAPS } from '../src/data/maps.js';
 import { makeBoard } from './helpers.js';
 
 test('実績は33個。ふしぎは6個で隠す', () => {
@@ -48,9 +49,12 @@ test('ポチャの国と満員の島', () => {
   assert.ok(got.includes('full') && !got.includes('pocha'));
 });
 
-test('問題の実績は解いた問題で取れる。スコアの1つは工程6まで取れない', () => {
-  const later = ACHIEVEMENTS.filter((a) => a.later);
-  assert.deepEqual(later.map((a) => a.id), ['scoreAll']);
+test('問題の実績は解いた問題で、スコアの実績は全部の面の★2で取れる', () => {
+  assert.deepEqual(ACHIEVEMENTS.filter((a) => a.later).map((a) => a.id), []);
+  const all2 = Object.fromEntries(MAPS.map((m) => [m.id, m.stars[1]]));
+  assert.ok(newAchievements([], { board: createBoard(0), found: [], best: all2, puzzleOnly: true }).includes('scoreAll'));
+  const short = { ...all2, [MAPS[0].id]: MAPS[0].stars[1] - 1 };
+  assert.ok(!newAchievements([], { board: createBoard(0), found: [], best: short, puzzleOnly: true }).includes('scoreAll'));
   const got = newAchievements([], { board: createBoard(2), found: CREATURES.map((c) => c.id) });
   assert.ok(!got.includes('puzzle1') && !got.includes('scoreAll'));
   assert.ok(got.includes('all') && got.includes('rumors') && got.includes('g-flower'));
