@@ -24,6 +24,14 @@ test('問題は1つ以上あり、id がかぶらない。入門が先に並ぶ'
   const firstHard = PUZZLES.findIndex((p) => !p.intro);
   assert.ok(firstHard === -1 || PUZZLES.slice(firstHard).every((p) => !p.intro));
   assert.ok(PUZZLES.every((p) => p.note), 'どの問題にも、ねらいがある');
+  // 狙いの中は段の順（やさしい→むずかしい）。同じ狙いはまとまって並ぶ
+  const aims = PUZZLES.map((p) => p.aim).filter((a, i, l) => l.indexOf(a) === i);
+  for (const a of aims) {
+    const at = PUZZLES.map((p, i) => (p.aim === a ? i : -1)).filter((i) => i >= 0);
+    assert.equal(at[at.length - 1] - at[0] + 1, at.length, `${a} がまとまって並ぶ`);
+    const tiers = at.map((i) => PUZZLES[i].tier ?? 0);
+    assert.deepEqual(tiers, [...tiers].sort((x, y) => x - y), `${a} は段の順`);
+  }
 });
 
 for (const p of PUZZLES) {
@@ -33,12 +41,13 @@ for (const p of PUZZLES) {
     for (const it of p.items) assert.ok(PLACEABLES.some((x) => x.id === it && x.kind !== 'release'));
   });
 
-  test(`${p.id}：${p.intro ? '入門' : '素直な置き方では届かず'}、出てくる生き物はファイルのとおり`, () => {
+  const easy = p.intro || p.easy;
+  test(`${p.id}：${easy ? '入門・やさしい段' : '素直な置き方では届かず'}、出てくる生き物はファイルのとおり`, () => {
     const board = puzzleBoard(p);
-    if (!p.intro) assert.ok(greedyBest(board, p.items) < p.target);
+    if (!easy) assert.ok(greedyBest(board, p.items) < p.target);
     const all = solveAll(board, p.items, { aim: p.creature });
     assert.equal(all.best, p.target);
-    assert.ok(all.withAim > 0, '狙いの生き物が正解に入る');
+    if (p.creature) assert.ok(all.withAim > 0, '狙いの生き物が正解に入る');
     assert.deepEqual([...all.appear].sort(), p.appear);
   });
 }
