@@ -20,6 +20,11 @@
 
   <div id="log" class="log" aria-live="polite"></div>
 
+  <div id="score-bar" class="puzzle-bar" hidden>
+    <p id="score-title" class="puzzle-title"></p>
+    <div id="score-totals" class="score-totals"></div>
+  </div>
+
   <div class="palette" role="group" aria-label="置く物"></div>
 
   <div id="puzzle-bar" class="puzzle-bar" hidden>
@@ -61,7 +66,7 @@
 </dialog>
 
 <dialog id="puzzles">
-  <h2>連鎖問題</h2>
+  <h2>問題とスコアアタック</h2>
   <p class="book-note">決まった順に置く物を置いて、目標の連鎖を出す。どの手で出してもよく、正解の置き方は1つとは限らない。問題に出てくる生き物を図鑑で全部見つけると開く。</p>
   <div id="puzzle-list" class="puzzle-groups"></div>
   <form method="dialog"><button>閉じる</button></form>
@@ -81,6 +86,7 @@
     <li>新しい生き物がしばらく出ないと、使う物が分かっている生き物が1手で現れる所が、島の上でほんのり光る。</li>
     <li>図鑑の「実績」で、取った実績を見られる。</li>
     <li>「問題」では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。</li>
+    <li>「問題」の一番下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。地図は図鑑の数で開く（試しに点の付け方を2通り並べている）。</li>
   </ol>
   <p class="help-note">生き物の居るマスには置けない（先に帰す）。帰しただけでは連鎖は起きない。地面を置くと上の物（木・花・岩・巣）は消え、高さは残る。岩と巣は地面を変えずに上に置く。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
   <form method="dialog" class="help-actions">
