@@ -16,13 +16,13 @@ test('火の山の生き物は㉕から続く番号（試作6匹＋第18回の5�
   assert.deepEqual(CREATURES.filter((c) => c.island === 2).map((c) => c.no), Array.from({ length: ISLAND2.length }, (_, i) => 25 + i));
 });
 
-test('島ごとに置く物は8つ（案②。火の山の島は第18回で水を足して9つ）。第2の島に砂・岩・巣は置けず、第1の島に灰・溶岩・薪・種は置けない', () => {
+test('島ごとに置く物は8つ（案②）。第2の島に水・砂・岩・巣は置けず（水は生き物だけが出す＝第19回 U6）、第1の島に灰・溶岩・薪・種は置けない', () => {
   assert.equal(ISLANDS[1].items.length, 8);
-  assert.equal(ISLANDS[2].items.length, 9);
+  assert.equal(ISLANDS[2].items.length, 8);
   const one = makeBoard();
   const two = isle2();
   for (const id of ['ash', 'lava', 'firewood', 'seed']) assert.equal(whyNotPlace(one, 0, 0, id), 'この島では置けない', id);
-  for (const id of ['sand', 'rock', 'nest']) assert.equal(whyNotPlace(two, 0, 0, id), 'この島では置けない', id);
+  for (const id of ['water', 'sand', 'rock', 'nest']) assert.equal(whyNotPlace(two, 0, 0, id), 'この島では置けない', id);
   for (const id of ['grass', 'hill', 'release']) assert.notEqual(whyNotPlace(two, 0, 0, id), 'この島では置けない', id);
   assert.equal(whyNotPlace(one, 0, 0, 'valley'), 'これ以上低くできない', '谷はどちらの島でも置ける（高さ0には置けない）');
 });
@@ -127,18 +127,17 @@ test('㉚ホムラドリ：高さ2が炎3つに囲まれると出て、2マス�
 });
 
 // ---- 第18回：火の山の生き物の残り（まず ㉛〜㉟）と、火の山の島の水 ----
-test('火の山の島の水は ㉛カコウコを見つけると置ける（はじまりの島ではいつでも）', () => {
-  const f = island1Found.slice(0, 20);
-  assert.equal(whyNotPlace(isle2(), 0, 0, 'water', f), 'まだ使えない');
-  assert.equal(whyNotPlace(isle2(), 0, 0, 'water', [...f, 'kakouko']), null);
+test('火の山の島の水は、カコウコを見つけても手では置けない（第19回 U6）', () => {
+  const f = [...island1Found.slice(0, 20), 'kakouko'];
+  assert.equal(whyNotPlace(isle2(), 0, 0, 'water', f), 'この島では置けない');
   assert.equal(whyNotPlace(makeBoard(), 0, 0, 'water', []), null);
 });
 
 test('火の山の生き物は、はじまりの島（と問題・スコアアタックの盤）には出ない', () => {
-  // 草のマスの隣に木2つ：火の山の島なら㉝キコリス、はじまりの島では出ない
-  const spec = { '1,0': { ground: 'grass', object: 'tree' }, '0,1': { ground: 'grass', object: 'tree' } };
-  assert.ok(!firstStep(place(makeBoard(spec), 0, 0, 'grass')).includes('kikorisu'));
-  assert.ok(firstStep(place(isle2(spec), 0, 0, 'grass')).includes('kikorisu'));
+  // 灰のマスの隣に木2つ（丘で高さを変えて調べる）：火の山の島なら㉝キコリス、ほかの盤では出ない
+  const spec = { '0,0': { ground: 'ash' }, '1,0': { ground: 'grass', object: 'tree' }, '0,1': { ground: 'grass', object: 'tree' } };
+  assert.ok(!firstStep(place(makeBoard(spec), 0, 0, 'hill')).includes('kikorisu'));
+  assert.ok(firstStep(place(isle2(spec), 0, 0, 'hill')).includes('kikorisu'));
 });
 
 test('㉛カコウコ：高さ0の溶岩が、高さ1以上のマス3つに囲まれると出て、隣の溶岩を水にする', () => {
@@ -157,9 +156,10 @@ test('㉜クロイシ：溶岩の隣に水2つで出て、水を岩のある荒�
   assert.equal(r.board.cells['1,0'].object, 'rock');
 });
 
-test('㉝キコリス：草の隣に木2つで出て、木を薪にする（草は残る）', () => {
+test('㉝キコリス：灰の隣に木2つで出て、木を薪にする（草は残る。第19回 U3：中心は灰）', () => {
   const b = isle2({ '1,0': { ground: 'grass', object: 'tree' }, '0,1': { ground: 'grass', object: 'tree' } });
-  const r = place(b, 0, 0, 'grass');
+  assert.ok(!firstStep(place(b, 0, 0, 'grass')).includes('kikorisu'), '草の上には出ない');
+  const r = place(b, 0, 0, 'ash');
   assert.deepEqual(firstStep(r), ['kikorisu']);
   assert.equal(r.board.cells['1,0'].object, 'firewood');
   assert.equal(r.board.cells['1,0'].ground, 'grass');

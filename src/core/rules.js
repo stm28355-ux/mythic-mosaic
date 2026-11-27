@@ -247,8 +247,7 @@ export function isOpenOn(item, found, island = 1) {
   if (!isOpen(item, found)) return false;
   if (found === Infinity || island !== 2) return true;
   const late = ISLANDS[2].late?.[item.id];
-  const by = ISLANDS[2].lateBy?.[item.id];
-  return (late === undefined || island2Count(found) >= late) && (by === undefined || found.includes(by));
+  return late === undefined || island2Count(found) >= late;
 }
 
 // その島に置ける物か（第16回 案②：島ごとに8つ）。島の無い盤（問題・スコアアタック）は第1の島と同じ

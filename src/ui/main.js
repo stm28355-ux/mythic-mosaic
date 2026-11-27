@@ -105,7 +105,7 @@ function renderPalette() {
 }
 
 function lockText(item) {
-  if (item.unlockBy || (state.island === 2 && ISLANDS[2].lateBy[item.id])) return '？？？で開く';
+  if (item.unlockBy) return '？？？で開く';
   const late = state.island === 2 ? ISLANDS[2].late[item.id] : undefined;
   const n2 = item.unlock2 ?? (isOpen(item, state.found) ? late : undefined);
   if (n2 !== undefined) return state.found.length < ISLANDS[2].openAt ? '火の山の島で開く' : `火の山の${n2}匹で開く`;
@@ -694,9 +694,6 @@ function unlockMessages(from, to) {
   const out = [];
   for (const item of PLACEABLES) {
     if (!isOpen(item, from) && isOpen(item, to)) out.push(`「${item.name}」が置けるようになった`);
-  }
-  for (const [id, by] of Object.entries(ISLANDS[2].lateBy)) {
-    if (!from.includes(by) && to.includes(by)) out.push(`${ISLANDS[2].name}でも「${PLACEABLES.find((p) => p.id === id).name}」が置けるようになった`);
   }
   for (const [id, n] of Object.entries(ISLANDS[2].late)) {
     if (island2Count(from) < n && island2Count(to) >= n) out.push(`${ISLANDS[2].name}でも「${PLACEABLES.find((p) => p.id === id).name}」が置けるようになった`);
