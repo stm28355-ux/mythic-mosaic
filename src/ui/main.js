@@ -94,9 +94,10 @@ function renderPalette() {
     const open = sa ? left[item.id] > 0 : isOpenOn(item, foundHere(), state.island);
     b.disabled = !open;
     b.setAttribute('aria-pressed', String(selected === item.id));
-    b.innerHTML = `<span class="swatch"></span><span class="label">${item.name}</span>`
-      // 鍵の行は開いていても場所を取る（判定表 第30回 UI1 案A：鍵の文がある時だけ欄が高くなり、道具の段がずれた）
-      + `<span class="lock">${sa ? `残り${left[item.id]}` : open ? '　' : lockText(item)}</span>`;
+    // 鍵のある物はタイルを出さず、開く条件だけを書く（第32回：条件の2行でタイルがつぶれていた）。欄の高さはいつも同じ
+    b.classList.toggle('locked', !sa && !open);
+    b.innerHTML = !sa && !open ? `<span class="lock-only">${item.name}は<br>${lockText(item)}</span>`
+      : `<span class="swatch"></span><span class="label">${item.name}</span>${sa ? `<span class="lock">残り${left[item.id]}</span>` : ''}`;
     b.addEventListener('click', () => {
       if (sa) sa.selected = item.id; else { state.selected = item.id; save(); }
       renderPalette();
@@ -144,7 +145,8 @@ function renderMode() {
   $('score-bar').hidden = !sa;
   $('puzzle-cast').hidden = !(pz || sa);
   $('clear').textContent = pz || sa ? 'やり直す' : '更地にする';
-  $('open-puzzles').textContent = pz || sa ? '箱庭へ' : '挑戦';
+  $('open-puzzles').textContent = '挑戦';
+  $('back-garden').hidden = !(pz || sa);
   // 島を渡る（図鑑20匹から。判定表 第15回 K2）。問題とスコアアタックの間は出さない
   $('cross').hidden = Boolean(pz || sa) || !mayCross();
   $('cross').textContent = state.island === 2 ? '⇄ はじまりへ' : '⇄ 火の山へ';
@@ -279,7 +281,7 @@ function renderAchievements() {
   const got = new Set(state.achieved);
   $('ach-count').textContent = `${got.size} / ${ACHIEVEMENTS.length}`;
   const kinds = [...new Set(ACHIEVEMENTS.map((a) => a.kind))];
-  $('ach-list').replaceChildren(...kinds.flatMap((kind) => {
+  $('ach-list').replaceChildren(...kinds.map((kind) => {
     const list = ACHIEVEMENTS.filter((a) => a.kind === kind);
     const h = document.createElement('h3');
     h.className = 'ach-kind';
@@ -297,7 +299,10 @@ function renderAchievements() {
         <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`;
       return li;
     }));
-    return [h, ol];
+    const sec = document.createElement('section');
+    sec.className = 'ach-section';
+    sec.append(h, ol);
+    return sec;
   }));
 }
 
@@ -457,6 +462,8 @@ function startPuzzle(p) {
   // やり直しても、見たヒントはそのまま
   const hints = pz && pz.p.id === p.id ? pz.hints : 0;
   pz = { p, board: puzzleBoard(p), step: 0, chains: [], moves: [], history: [], done: false, hints };
+  sa = null; // スコアアタックから問題へ移ったとき
+  renderPalette();
   chainEl.textContent = '';
   say([`下の置く物を順に置いて、${p.items.length}手のうちに${p.target}連鎖を出そう（どの手で出してもよい）`]);
   render();
@@ -471,7 +478,7 @@ function leavePuzzle() {
 }
 
 async function onPuzzleCell(k) {
-  if (pz.done) { say(['クリアした！「問題」から次の問題を選べる']); return; }
+  if (pz.done) { say(['クリアした！「挑戦」から次の問題を選べる']); return; }
   const item = pz.p.items[pz.step];
   if (!item) { say(['置く物はもう無い。やり直すか、1手戻して別の所に置いてみよう']); return; }
   const [q, r] = parseKey(k);
@@ -673,6 +680,7 @@ function showSteps(which) {
 
 function startScore(m) {
   sa = { m, board: mapBoard(m), moves: [], history: [], selected: Object.keys(m.stock)[0] };
+  pz = null; // 問題からスコアアタックへ移ったとき
   chainEl.textContent = '';
   say([`置ける物を全部（${movesOf(m)}手）好きな順に置いて、点を集めよう。★1は${m.stars[0]}点`]);
   render();
@@ -955,14 +963,18 @@ $('puzzle-hint').addEventListener('click', () => {
   render();
 });
 
+// 挑戦の一覧は、問題やスコアアタックの最中でも開ける。そこから別の挑戦を始めるか、「箱庭へ戻る」（判定表 第32回 V1）
 $('open-puzzles').addEventListener('click', () => {
   if (busy) return;
-  if (pz) { leavePuzzle(); return; }
-  if (sa) { leaveScore(); return; }
-  chTab = null;
-  chPick = null;
+  chTab = pz ? (pz.p.island === 2 ? 'two' : 'one') : sa ? 'score' : null;
+  chPick = pz ? pz.p.id : sa ? `map:${sa.m.id}` : null;
   renderPuzzleList();
   $('puzzles').showModal();
+});
+$('back-garden').addEventListener('click', () => {
+  $('puzzles').close();
+  if (pz) leavePuzzle();
+  if (sa) leaveScore();
 });
 $('open-book').addEventListener('click', () => { bookIsle = null; renderBook(); showTab('creatures'); $('book').showModal(); });
 function showTab(name) {
@@ -1004,6 +1016,15 @@ window.describeUI = () => {
   lines.push(`ログ：${[...log.children].map((p) => p.textContent).join(' / ')}`);
   return lines.join('\n');
 };
+
+// 枚の外（うしろの暗い所）を押したら閉じる（判定表 第32回 V2）
+for (const d of document.querySelectorAll('dialog')) {
+  d.addEventListener('click', (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
+  });
+}
 
 $('version').textContent = APP_VERSION;
 checkAchievements({}); // 前の記録からも、図鑑と島の実績はさかのぼって取れる（K3）

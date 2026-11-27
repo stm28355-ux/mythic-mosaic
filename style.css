@@ -106,7 +106,7 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 }
 .item[aria-pressed="true"] { border-color: var(--accent); background: rgb(224 184 90 / 0.15); }
 .item:disabled { opacity: 0.45; cursor: default; }
-.swatch { width: 22px; height: 22px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.swatch { flex: none; width: 22px; height: 22px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
 .i-grass .swatch { background: var(--grass); }
 .i-water .swatch { background: var(--water); }
 .i-sand .swatch { background: var(--sand); }
@@ -220,7 +220,10 @@ dialog.steps-dlg { width: min(640px, 94vw); }
   .book-entry { height: auto; min-height: 200px; position: sticky; top: 0; margin: 0; }
 }
 /* 実績：種類ごとに分け、PC は3列（判定表 第31回 F2） */
-.ach-kind { margin: 10px 0 4px; font-size: 0.95rem; color: var(--accent); }
+.ach-kind { margin: 0 0 6px; font-size: 0.95rem; color: var(--accent); }
+/* 実績は種類ごとに枠で囲む（判定表 第32回 V3：区切りが分かりにくかった） */
+.ach-section { border: 1px solid #444b5a; border-radius: 10px; padding: 10px 12px 4px; margin-bottom: 12px; background: rgb(255 255 255 / 0.02); }
+.ach-section .ach { margin-bottom: 6px; }
 .ach-groups .ach { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px 16px; }
 .book-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; min-height: 64px; border: 2px solid transparent; border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
 .book-tile[aria-pressed="true"] { border-color: var(--accent); }
@@ -246,7 +249,7 @@ dialog.steps-dlg { width: min(640px, 94vw); }
   transition: opacity 0.25s, transform 0.25s; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: none; }
-.help { padding-left: 1.2em; margin-top: 0.2em; }
+.help { padding-left: 2em; margin-top: 0.2em; }
 .help-head { margin: 1em 0 0; font-size: 1rem; color: var(--accent); }
 /* 遊び方：PC は3つの見出しを3列（判定表 第31回 F2） */
 @media (min-width: 900px) { .help-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 20px; } }
@@ -290,7 +293,10 @@ dialog.steps-dlg { width: min(640px, 94vw); }
 /* 箱庭とスコアアタックの置く物の欄は、いつも2段ぶん（判定表 第31回 F4・UI1 案A：鍵の行がある時だけ高くなっていた） */
 .palette { grid-auto-rows: 72px; min-height: calc(2 * 72px + 6px); }
 .palette .item { height: 72px; min-height: 0; }
-.palette .lock { min-height: 2.4em; line-height: 1.2; text-align: center; display: flex; align-items: center; }
+/* 鍵のある物は、タイルの代わりに開く条件だけ（第32回） */
+.palette .lock-only { font-size: 0.75rem; line-height: 1.35; color: var(--quiet); text-align: center; padding: 0 4px; }
+.palette .item.locked { border-style: dashed; border-color: #444b5a; }
+.palette .item.locked:disabled { opacity: 1; }
 /* 問題の題名の欄は2行ぶん取っておく（判定表 第31回 F5） */
 .puzzle-head .puzzle-title { min-height: 3.2em; display: flex; align-items: center; }
 /* スクロールバーの場所をいつも取っておく（判定表 第31回 F3） */
