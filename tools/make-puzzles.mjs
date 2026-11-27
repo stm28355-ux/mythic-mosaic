@@ -147,6 +147,55 @@ export const AIMS = {
         note: '高い所の炎のまわりに生き物を4匹集めて、ヒノヤマヌシを呼ぶ' },
     ],
   },
+  // 残りの狙い（判定表 第26回 F8）。出てよい生き物は全部（はじまりの島の生き物も火の山の島で出る）
+  oshi: {
+    order: 120, island: 2, title: '押して並べる', allow: ALL,
+    items: ['ash', 'hill', 'lava', 'firewood'], build: ['ash', 'hill', 'lava', 'firewood', 'grass'], size: 19,
+    tiers: [
+      { moves: 2, minChain: 3, easy: true, maxRatio: 0.2, pick: 'easy', aim: 'tsukisusu',
+        note: '高い灰のそばに生き物を集めてツキススを呼ぶ。押された生き物の行き先で、次の形ができる' },
+      { moves: 2, minChain: 3, pick: 'mid', aim: 'yamaokoshi', plant: true,
+        note: '低い溶岩に生き物と溶岩を寄せてヤマオコシを呼ぶ。押して持ち上げた所で、次の生き物が来る' },
+      { moves: 3, minChain: 4, pick: 'mid', aim: 'tsukisusu', plant: true,
+        note: '押す向きを考えて生き物を並べ、押された先で連鎖を続ける' },
+    ],
+  },
+  wa: {
+    order: 130, island: 2, title: '灰と草の輪', allow: ALL,
+    items: ['firewood', 'lava', 'ash', 'grass', 'seed'], build: ['firewood', 'lava', 'ash', 'grass', 'seed'], size: 19,
+    tiers: [
+      { moves: 2, minChain: 3, easy: true, maxRatio: 0.2, pick: 'easy', aim: 'suminoko',
+        note: '炎のそばの灰にスミノコを呼ぶ。燃え尽きた灰が、次の生き物の居場所になる' },
+      { moves: 2, minChain: 3, pick: 'mid', aim: 'minori', plant: true,
+        note: '花に囲まれた灰にミノリを呼び、花を種に変える' },
+      { moves: 3, minChain: 4, pick: 'mid', aim: 'mebuki', plant: true,
+        note: '炎→灰→草→花→種→木と、物が変わり続ける輪をつなぐ' },
+    ],
+  },
+  mizu: {
+    order: 140, island: 2, title: '溶岩と水', allow: ALL,
+    items: ['lava', 'hill', 'ash', 'valley'], build: ['lava', 'hill', 'ash', 'valley', 'grass'], size: 19,
+    tiers: [
+      { moves: 2, minChain: 3, easy: true, maxRatio: 0.2, pick: 'easy', aim: 'kakouko', plant: true,
+        note: '高い所に囲まれたくぼみに溶岩を流し、カコウコに湖を作らせる' },
+      { moves: 2, minChain: 3, pick: 'mid', aim: 'kuroishi', plant: true,
+        note: 'カコウコの水のそばに溶岩を置いて、クロイシに黒い石を作らせる' },
+      { moves: 3, minChain: 4, pick: 'mid', aim: 'gankui', plant: true,
+        note: '溶岩を水に、水を岩に、岩を消してと、地面を変えながらつなぐ' },
+    ],
+  },
+  kaesu: {
+    order: 150, island: 2, title: '帰して消して、もう一度', allow: ALL,
+    items: ['ash', 'lava', 'firewood', 'hill', 'valley'], build: ['ash', 'lava', 'firewood', 'hill', 'valley', 'grass'], size: 19,
+    tiers: [
+      { moves: 2, minChain: 3, easy: true, maxRatio: 0.2, pick: 'easy', aim: 'kemuri', plant: true,
+        note: 'ケムリが隣の生き物を帰す。空いたマスに、別の生き物が来る' },
+      { moves: 2, minChain: 3, pick: 'mid', aim: 'tanikaze', plant: true,
+        note: '高い所にはさまれた低い灰にタニカゼを呼び、帰した所に次の生き物を呼ぶ' },
+      { moves: 3, minChain: 4, pick: 'mid', aim: 'kazan', plant: true,
+        note: 'カザンが上の物を消した所で、もう一度生き物を呼ぶ' },
+    ],
+  },
   kazenoko: {
     order: 90, title: '丘の風', want: 3,
     note: 'カゼノコの「2マス先まで草」を連鎖の途中に入れる',
