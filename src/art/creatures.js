@@ -3,6 +3,7 @@
 import { grid, toSvg } from './pixel.js';
 import { MORE } from './creatures-more.js';
 import { FIRE } from './creatures-fire.js';
+import { EXTRA } from './creatures-extra.js';
 
 const INK = '#1d1a33';
 const P = {
@@ -86,7 +87,7 @@ export const DRAW = {
     .outline(INK),
 };
 
-Object.assign(DRAW, MORE, FIRE);
+Object.assign(DRAW, MORE, FIRE, EXTRA);
 
 // 絵のある生き物の SVG（なければ null。絵のない生き物は丸と番号のまま）
 const cache = {};
