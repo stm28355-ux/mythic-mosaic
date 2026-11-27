@@ -825,6 +825,7 @@ $('cross').addEventListener('click', () => {
   if (!ISLANDS[to].items.includes(state.selected)) state.selected = 'grass';
   history = [];
   chainEl.textContent = '';
+  checkAchievements({}); // 海を渡る（判定表 第28回 H1）
   say(to === 2
     ? [`${ISLANDS[2].name}に渡った`, '灰・溶岩・薪・種が置ける。炎は生き物だけが出す。押されて島の外へ出た生き物は帰る']
     : [`${ISLANDS[1].name}に戻った`]);

@@ -12,6 +12,8 @@ const groupIds = (g) => CREATURES.filter((c) => c.group === g).map((c) => c.id);
 const cellsOf = (board) => Object.values(board.cells);
 const spawnedAll = (steps) => steps.flatMap((s) => s.spawned);
 // その段で効果により帰ったマス（spawnedBoard では居て、段のあとに居ない）
+const isFire = (board) => board?.island === 2;
+const spawnedIds = (steps) => new Set(spawnedAll(steps).map((x) => x.id));
 const goneIn = (st) => Object.keys(st.board.cells).filter((k) => st.spawnedBoard.cells[k].creature && !st.board.cells[k].creature);
 
 // ctx: { steps, before, board, found, cleared, best, puzzleOnly }（puzzleOnly＝問題の盤なので、問題の実績だけ見る）
@@ -34,7 +36,10 @@ export const ACHIEVEMENTS = Object.freeze([
   group('g-dune', '砂丘の友', '砂と丘', '島の飾り：風車'),
   group('g-mountain', '山の友', '岩と山', '島の飾り：立ち石'),
   group('g-marsh', '沼の友', '湿地', '島の飾り：蛍の灯り'),
+  // 火の山の島（判定表 第28回 H5）
+  group('g-fire', '火の山の友', '火の山', '島の飾り：炎の鳥の像'),
   { id: 'hajimari', kind: '図鑑', name: '始まりに会う', text: 'ハジマリを見つける', reward: '島の飾り：竜の卵', check: ({ found }) => found.includes('hajimari') },
+  { id: 'hinoyamanushi', kind: '図鑑', name: '火の山の主に会う', text: 'ヒノヤマヌシを見つける', reward: '島の飾り：溶岩の灯り', check: ({ found }) => found.includes('hinoyamanushi') },
 
   { id: 'chain2', kind: '連鎖', name: 'つながり', text: '2連鎖', reward: '称号', check: ({ steps }) => steps.length >= 2 },
   { id: 'chain3', kind: '連鎖', name: 'ひろがり', text: '3連鎖', reward: '称号', check: ({ steps }) => steps.length >= 3 },
@@ -48,6 +53,8 @@ export const ACHIEVEMENTS = Object.freeze([
       for (const x of s.spawned) n[x.id] = (n[x.id] ?? 0) + 1;
       return Object.values(n).some((v) => v >= 5);
     }) },
+  { id: 'push3', kind: '連鎖', name: '押しくらまんじゅう', text: '1回の手で、生き物を3匹以上押す', reward: '称号',
+    check: ({ steps }) => steps.flatMap((s) => s.moved ?? []).length >= 3 },
 
   { id: 'stage1', kind: '島', name: '島が広がる', text: '37マスに広げる', reward: '称号', check: ({ board }) => board.stage >= 1 },
   { id: 'stage2', kind: '島', name: '大きな島', text: '61マスに広げる', reward: '称号', check: ({ board }) => board.stage >= 2 },
@@ -59,12 +66,23 @@ export const ACHIEVEMENTS = Object.freeze([
   { id: 'full', kind: '島', name: '満員の島', text: '61マスが全部生き物で埋まる', reward: '称号',
     check: ({ board }) => board.stage >= 2 && cellsOf(board).every((c) => c.creature) },
   { id: 'high20', kind: '島', name: '高い島', text: '高さ2のマスが20', reward: '称号', check: ({ board }) => cellsOf(board).filter((c) => c.height === 2).length >= 20 },
+  // 火の山の島（判定表 第28回 H1〜H4）
+  { id: 'cross', kind: '島', name: '海を渡る', text: 'はじめて火の山の島へ渡る', reward: '称号', check: ({ board }) => isFire(board) },
+  { id: 'fire61', kind: '島', name: '火の山が広がる', text: '火の山の島を61マスに広げる', reward: '称号', check: ({ board }) => isFire(board) && board.stage >= 2 },
+  { id: 'fire10', kind: '島', name: '燃えさかる島', text: '島に炎が10マス', reward: '称号', check: ({ board }) => cellsOf(board).filter((c) => c.object === 'fire').length >= 10 },
+  { id: 'cooled', kind: '島', name: '冷めた火の山', text: '61マスの火の山の島に、灰も溶岩も1つもない', reward: '称号',
+    check: ({ board }) => isFire(board) && board.stage >= 2 && cellsOf(board).every((c) => c.ground !== 'ash' && c.ground !== 'lava') },
 
   { id: 'puzzle1', kind: '問題とスコア', name: 'はじめの一問', text: '連鎖問題を1問解く', reward: '称号', puzzle: true, check: ({ cleared }) => cleared.length >= 1 },
   { id: 'puzzleAll', kind: '問題とスコア', name: '連鎖の達人', text: '連鎖問題を全部解く', reward: '図鑑の枠（虹）', puzzle: true,
     check: ({ cleared }) => PUZZLES.length > 0 && PUZZLES.every((p) => cleared.includes(p.id)) },
   { id: 'scoreAll', kind: '問題とスコア', name: '島づくりの名人', text: 'スコアアタックの全部の面で★2', reward: '島の飾り：灯台', puzzle: true,
     check: ({ best = {} }) => MAPS.every((m) => starsOf(m, bestScore(best[m.id])) >= 2) },
+  // 火の山の島（判定表 第28回 H8・H9）
+  { id: 'firePuzzles', kind: '問題とスコア', name: '火の山の達人', text: `火の山の連鎖問題を全部（${PUZZLES.filter((p) => p.island === 2).length}問）解く`, reward: '称号', puzzle: true,
+    check: ({ cleared }) => PUZZLES.some((p) => p.island === 2) && PUZZLES.filter((p) => p.island === 2).every((p) => cleared.includes(p.id)) },
+  { id: 'fireScore', kind: '問題とスコア', name: '火の山の名人', text: `火の山の地図${MAPS.filter((m) => m.island === 2).length}面で★2`, reward: '島の飾り：のろし', puzzle: true,
+    check: ({ best = {} }) => MAPS.some((m) => m.island === 2) && MAPS.filter((m) => m.island === 2).every((m) => starsOf(m, bestScore(best[m.id])) >= 2) },
 
   // ふしぎ：取るまで名前も条件も隠し、なぞかけ（teaser）だけ出す（K5）
   { id: 'clash', kind: 'ふしぎ', hidden: true, name: '首かしげ', text: '効果がぶつかって、そのマスが変わらない', teaser: '生き物どうしの頼みごとが、ぶつかると…？', reward: '称号',
@@ -88,6 +106,13 @@ export const ACHIEVEMENTS = Object.freeze([
       const living = cellsOf(board).filter((c) => c.creature);
       return living.length >= 10 && living.every((c) => c.creature === 'pocha');
     } },
+  // 火の山の島のふしぎ（判定表 第28回 H10〜H12）
+  { id: 'pushout', kind: 'ふしぎ', hidden: true, name: 'ふっとんだ', text: '押して、生き物を島の外へ出す', teaser: '押しすぎると…？', reward: '称号',
+    check: ({ steps }) => steps.some((s) => (s.pushedOut ?? []).length > 0) },
+  { id: 'firewater', kind: 'ふしぎ', hidden: true, name: '火と水', text: '1回の手で、カコウコとクロイシが出る', teaser: '熱い物と冷たい物が出会うと…？', reward: '称号',
+    check: ({ steps }) => { const s = spawnedIds(steps); return s.has('kakouko') && s.has('kuroishi'); } },
+  { id: 'cycle', kind: 'ふしぎ', hidden: true, name: '巡る火', text: '1回の手で、スミノコ・ハイモグラ・タネボウズが出る', teaser: '燃え尽きたあとに…？', reward: '称号',
+    check: ({ steps }) => { const s = spawnedIds(steps); return ['suminoko', 'haimogura', 'tanebouzu'].every((id) => s.has(id)); } },
 ]);
 
 // まだ取っていない実績のうち、今取れたもの（id の並び）
