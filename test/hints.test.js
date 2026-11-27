@@ -8,9 +8,9 @@ import { makeBoard } from './helpers.js';
 
 const byId = Object.fromEntries(CREATURES.map((c) => [c.id, c]));
 
-test('噂は21匹。①②⑤には無く、言う生き物はみな居る', () => {
+test('噂は43匹（はじまりの島21＋第24回の22）。①②⑤には無く、言う生き物はみな居る', () => {
   const withRumor = CREATURES.filter((c) => c.rumor);
-  assert.equal(withRumor.length, 21);
+  assert.equal(withRumor.length, 43);
   for (const id of ['pocha', 'kokedama', 'sunamoguri']) assert.equal(byId[id].rumor, undefined);
   for (const c of withRumor) for (const by of c.rumor.by) assert.ok(byId[by], `${c.id} の噂を言う ${by}`);
   // 見つけにくい7匹は2匹から聞ける（V3）
@@ -54,4 +54,18 @@ test('光る所：使う物が分かっているまだの生き物が、1手で�
   // 噂のない②コケダマも光る（草4つの真ん中に草）
   const meadow = makeBoard({ '1,0': { ground: 'grass' }, '1,-1': { ground: 'grass' }, '0,-1': { ground: 'grass' }, '-1,0': { ground: 'grass' } });
   assert.equal(glowCell(meadow, ['pocha']).id, 'kokedama');
+});
+
+// 判定表 第24回：火の山と巣の生き物の噂
+test('噂のないのは①②⑤と、火の山の最初の2匹（㉕ヒノコ・㉖ハイモグラ）だけ', () => {
+  assert.deepEqual(CREATURES.filter((c) => !c.rumor).map((c) => c.id), ['pocha', 'kokedama', 'sunamoguri', 'hinoko', 'haimogura']);
+});
+
+test('噂はたどれる：噂のない5匹から始めて、言う生き物を先に見つけていけば全部の噂に届く', () => {
+  const reached = new Set(CREATURES.filter((c) => !c.rumor).map((c) => c.id));
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const c of CREATURES) if (!reached.has(c.id) && c.rumor.by.some((id) => reached.has(id))) { reached.add(c.id); changed = true; }
+  }
+  assert.equal(reached.size, CREATURES.length);
 });
