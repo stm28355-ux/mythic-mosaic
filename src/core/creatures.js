@@ -16,6 +16,7 @@
 //   release … 範囲の中の生き物を帰す（帰ったマスは「変わった」に数え、次の段で調べる）
 //   range: 1 なら隣6マス、2 なら2マス先まで（中心は含まない）
 // hint：見つける前に図鑑に出る一言（企画まとめ「ヒントと図鑑」の最初の段。形の答えは書かない）
+// no：図鑑の番号（判定表 第31回 N1・N2：巣の2匹は組の仲間の後、ハジマリははじまりの島の最後㉖、ヒノヤマヌシは火の山の最後㊽）。並びの順は追加した順のまま
 // rumor：by の生き物のどれかを見つけると聞ける噂（2段目。判定表 第6回 U1〜U21）。①②⑤は最初に見つかるので噂はない。
 // 火の山の生き物と巣の2匹の噂は判定表 第24回（㉕ヒノコ・㉖ハイモグラは火の山の最初の2匹なので噂はない）
 // 同じマスに2種類が住もうとするとどちらも出ない（D8）ので、中心の条件が重なる生き物は max で分ける。
@@ -206,7 +207,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['mofuroo'], text: '巣は草の上に置いて。木が2本見守っていれば、雛がかえる' },
   },
   {
-    id: 'hanabira', no: 14, name: 'ハナビラ', title: '花びらの妖精', group: '花',
+    id: 'hanabira', no: 15, name: 'ハナビラ', title: '花びらの妖精', group: '花',
     center: { ground: 'grass', object: 'flower' },
     around: [{ match: { object: 'flower' }, min: 2 }, { match: ANY, max: 0 }],
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'grass', object: 'flower' },
@@ -215,7 +216,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['hinadori', 'bunbun'], text: '花に囲まれた花。でもそばに誰かいると恥ずかしがる。先に帰してあげて' },
   },
   {
-    id: 'bunbun', no: 15, name: 'ブンブ', title: '蜜蜂の精', group: '花',
+    id: 'bunbun', no: 16, name: 'ブンブ', title: '蜜蜂の精', group: '花',
     center: { ground: 'grass', object: 'flower' },
     around: [{ match: { object: 'flower' }, min: 2 }, { match: ANY, min: 1 }],
     effect: { kind: 'grow', range: 1, from: { object: 'flower' }, object: 'tree' },
@@ -224,7 +225,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['kodama'], text: 'ぼくが咲かせた花畑に、誰か1匹でもいると、蜜蜂がにぎやかに来る' },
   },
   {
-    id: 'nijidori', no: 16, name: 'ニジドリ', title: '虹の鳥', group: '花',
+    id: 'nijidori', no: 17, name: 'ニジドリ', title: '虹の鳥', group: '花',
     center: { height: 2, ground: 'water' },
     around: [{ match: { object: 'flower' }, min: 1 }, { match: { object: 'tree' }, min: 1, max: 1 }, { match: { ground: 'water' }, max: 1 }, { match: { ground: 'grass' }, max: 2 }],
     effect: { kind: 'convert', range: 2, from: { ground: 'barren' }, to: 'grass', object: 'flower' },
@@ -233,7 +234,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['kazenoko', 'hasuhime'], text: '高い所の水。花が咲いて、木が1本。虹はそこにかかる' },
   },
   {
-    id: 'hitorisuna', no: 17, name: 'ヒトリスナ', title: '独りの砂狐', group: '砂と丘',
+    id: 'hitorisuna', no: 18, name: 'ヒトリスナ', title: '独りの砂狐', group: '砂と丘',
     center: { ground: 'sand', maxHeight: 1 },
     around: [{ match: { ground: 'sand' }, min: 2, max: 2 }, { match: ANY, max: 0 }],
     effect: { kind: 'convert', range: 1, from: { ground: 'grass' }, to: 'sand' },
@@ -242,7 +243,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['sunamoguri'], text: '砂が3つだけの小さな砂地。ひとりが好きな子がいる' },
   },
   {
-    id: 'iwao', no: 18, name: 'イワオ', title: '岩の巨人の子', group: '岩と山',
+    id: 'iwao', no: 19, name: 'イワオ', title: '岩の巨人の子', group: '岩と山',
     center: { ground: 'barren', object: 'rock' },
     around: { match: { minHeight: 1 }, min: 2 },
     effects: [
@@ -254,7 +255,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['hitorisuna'], text: '荒れ地の岩を、丘で2つ以上囲んでごらん' },
   },
   {
-    id: 'yamanami', no: 19, name: 'ヤマナミ', title: '山並みの竜', group: '岩と山',
+    id: 'yamanami', no: 21, name: 'ヤマナミ', title: '山並みの竜', group: '岩と山',
     center: { height: 2, ground: 'sand' },
     around: [{ match: { creature: 'any' }, max: 1 }, { match: { ground: 'grass' }, max: 2 }],
     line: { match: { minHeight: 2 }, length: 3 },
@@ -264,7 +265,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['iwao', 'nagare'], text: '高い砂山を3つ、まっすぐ並べると、竜が背を伸ばす' },
   },
   {
-    id: 'tsumuji', no: 20, name: 'ツムジ', title: 'つむじ風', group: '砂と丘',
+    id: 'tsumuji', no: 22, name: 'ツムジ', title: 'つむじ風', group: '砂と丘',
     center: { height: 2, ground: 'sand' },
     around: [{ match: ANY, min: 2 }, { match: { ground: 'grass' }, max: 2 }],
     effect: { kind: 'release', range: 1, from: ANY },
@@ -273,7 +274,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['kazenoko', 'yamanami'], text: '高い砂山のてっぺん。まわりに2匹以上いると、つむじ風が吹く' },
   },
   {
-    id: 'hotarubi', no: 21, name: 'ホタルビ', title: '蛍の灯', group: '湿地',
+    id: 'hotarubi', no: 23, name: 'ホタルビ', title: '蛍の灯', group: '湿地',
     center: { ground: 'marsh' },
     around: [{ match: { creature: 'kerori' }, min: 1 }, { match: { ground: 'grass' }, min: 2 }, { match: { ground: 'marsh' }, max: 1 }, { match: ANY, max: 2 }, { match: { ground: 'sand' }, max: 1 }],
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'marsh' },
@@ -282,7 +283,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['kerori'], text: 'ぼくのそばの湿地に、草が2つあれば灯がともる' },
   },
   {
-    id: 'kirinonushi', no: 22, name: 'キリノヌシ', title: '霧の主', group: '湿地',
+    id: 'kirinonushi', no: 24, name: 'キリノヌシ', title: '霧の主', group: '湿地',
     center: { ground: 'marsh' },
     around: [{ match: ANY, min: 3 }, { match: { ground: 'marsh' }, max: 1 }],
     effect: { kind: 'release', range: 1, from: ANY },
@@ -291,7 +292,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['tsumuji', 'hotarubi'], text: '湿地のまわりに3匹集まると、霧の主が来てみんな眠らせちゃう' },
   },
   {
-    id: 'doronko', no: 23, name: 'ドロンコ', title: '泥の子', group: '湿地',
+    id: 'doronko', no: 25, name: 'ドロンコ', title: '泥の子', group: '湿地',
     center: { ground: 'marsh' },
     around: [{ match: { ground: 'sand' }, min: 2 }, { match: { ground: 'marsh' }, max: 1 }, { match: ANY, max: 2 }],
     effects: [
@@ -303,7 +304,7 @@ export const CREATURES = Object.freeze([
     rumor: { by: ['kerori'], text: '湿地のそばに砂が2つ。泥遊びにちょうどいい' },
   },
   {
-    id: 'hajimari', no: 24, name: 'ハジマリ', title: '始まりの竜', group: '始まり',
+    id: 'hajimari', no: 26, name: 'ハジマリ', title: '始まりの竜', group: '始まり',
     center: { ground: 'barren' },
     around: { match: ANY, min: 6 },
     effects: [
@@ -317,7 +318,7 @@ export const CREATURES = Object.freeze([
 
   // ---- 第2の島「火の山の島」の試作6匹（判定表 第16回。噂はまだ無い＝使う物を最初から見せる）----
   {
-    id: 'hinoko', no: 25, name: 'ヒノコ', title: '火の子', group: '火の山', island: 2,
+    id: 'hinoko', no: 27, name: 'ヒノコ', title: '火の子', group: '火の山', island: 2,
     center: { ground: 'lava' },
     around: { match: { object: 'firewood' }, min: 1 },
     effect: { kind: 'grow', range: 1, from: { object: 'firewood' }, object: 'fire' },
@@ -325,7 +326,7 @@ export const CREATURES = Object.freeze([
     hint: '熱い所のそばに、燃える物があると',
   },
   {
-    id: 'haimogura', no: 26, name: 'ハイモグラ', title: '灰の子', group: '火の山', island: 2,
+    id: 'haimogura', no: 28, name: 'ハイモグラ', title: '灰の子', group: '火の山', island: 2,
     center: { ground: 'ash', object: null, height: 0 },
     around: { match: { ground: 'ash' }, min: 3 },
     effect: { kind: 'convert', range: 1, from: { ground: 'ash' }, to: 'grass' },
@@ -333,7 +334,7 @@ export const CREATURES = Object.freeze([
     hint: '灰がたっぷり積もった所にもぐる',
   },
   {
-    id: 'tsukisusu', no: 27, name: 'ツキスス', title: '突進の子', group: '火の山', island: 2,
+    id: 'tsukisusu', no: 29, name: 'ツキスス', title: '突進の子', group: '火の山', island: 2,
     center: { ground: 'ash', minHeight: 1 },
     around: { match: ANY, min: 2 },
     effect: { kind: 'push', range: 1, from: ANY },
@@ -342,7 +343,7 @@ export const CREATURES = Object.freeze([
     hint: '高い灰の上で、にぎやかな所に突っこむ',
   },
   {
-    id: 'tanebouzu', no: 28, name: 'タネボウズ', title: '種の子', group: '火の山', island: 2,
+    id: 'tanebouzu', no: 30, name: 'タネボウズ', title: '種の子', group: '火の山', island: 2,
     center: { ground: 'ash', object: 'seed' },
     around: { match: { ground: 'grass' }, min: 2 },
     effect: { kind: 'grow', range: 1, from: { ground: 'grass' }, object: 'flower' },
@@ -351,7 +352,7 @@ export const CREATURES = Object.freeze([
     hint: '灰にまいた種が、草に囲まれると',
   },
   {
-    id: 'fuigo', no: 29, name: 'フイゴ', title: 'ふいごの風', group: '火の山', island: 2,
+    id: 'fuigo', no: 31, name: 'フイゴ', title: 'ふいごの風', group: '火の山', island: 2,
     center: { object: 'fire' },
     around: [{ match: ANY, min: 1 }, { match: { object: 'firewood' }, min: 2 }],
     effects: [
@@ -363,7 +364,7 @@ export const CREATURES = Object.freeze([
     hint: '燃える所で、まだ燃えていない物を見ると',
   },
   {
-    id: 'homuradori', no: 30, name: 'ホムラドリ', title: '炎の鳥', group: '火の山', island: 2,
+    id: 'homuradori', no: 32, name: 'ホムラドリ', title: '炎の鳥', group: '火の山', island: 2,
     center: { height: 2 },
     around: { match: { object: 'fire' }, min: 3 },
     effect: { kind: 'convert', range: 2, from: { ground: 'ash' }, to: 'grass', object: 'flower' },
@@ -374,7 +375,7 @@ export const CREATURES = Object.freeze([
 
   // ---- 火の山の生き物の残り（判定表 第18回）。まず ㉛〜㉟ の5匹 ----
   {
-    id: 'kakouko', no: 31, name: 'カコウコ', title: '火口の湖', group: '火の山', island: 2,
+    id: 'kakouko', no: 33, name: 'カコウコ', title: '火口の湖', group: '火の山', island: 2,
     center: { ground: 'lava', height: 0 },
     around: { match: { minHeight: 1 }, min: 3 },
     effect: { kind: 'convert', range: 1, from: { ground: 'lava' }, to: 'water', object: null },
@@ -383,7 +384,7 @@ export const CREATURES = Object.freeze([
     hint: '高い所に囲まれた、熱いくぼみ',
   },
   {
-    id: 'kuroishi', no: 32, name: 'クロイシ', title: '黒曜の子', group: '火の山', island: 2,
+    id: 'kuroishi', no: 34, name: 'クロイシ', title: '黒曜の子', group: '火の山', island: 2,
     center: { ground: 'lava' },
     around: { match: { ground: 'water' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { ground: 'water' }, to: 'barren', object: 'rock' },
@@ -392,7 +393,7 @@ export const CREATURES = Object.freeze([
     hint: '熱い所が水にふれると',
   },
   {
-    id: 'kikorisu', no: 33, name: 'キコリス', title: '木こりのりす', group: '火の山', island: 2,
+    id: 'kikorisu', no: 35, name: 'キコリス', title: '木こりのりす', group: '火の山', island: 2,
     center: { ground: 'ash', object: null },
     around: { match: { object: 'tree' }, min: 2 },
     effect: { kind: 'grow', range: 1, from: { object: 'tree' }, object: 'firewood' },
@@ -401,7 +402,7 @@ export const CREATURES = Object.freeze([
     hint: '灰の上で、木を見上げて斧をかまえる',
   },
   {
-    id: 'suminoko', no: 34, name: 'スミノコ', title: '炭の子', group: '火の山', island: 2,
+    id: 'suminoko', no: 36, name: 'スミノコ', title: '炭の子', group: '火の山', island: 2,
     center: { ground: 'ash' },
     around: { match: { object: 'fire' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { object: 'fire' }, to: 'ash', object: null },
@@ -410,7 +411,7 @@ export const CREATURES = Object.freeze([
     hint: '燃える所のそばの、冷たい灰',
   },
   {
-    id: 'magumaru', no: 35, name: 'マグマル', title: '溶岩の子', group: '火の山', island: 2,
+    id: 'magumaru', no: 37, name: 'マグマル', title: '溶岩の子', group: '火の山', island: 2,
     center: { ground: 'lava', minHeight: 1 },
     around: { match: { ground: 'barren' }, min: 3 },
     effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'lava' },
@@ -421,7 +422,7 @@ export const CREATURES = Object.freeze([
 
   // ---- 火の山の生き物の残り ㊱〜㊵（判定表 第18回）----
   {
-    id: 'kemuri', no: 36, name: 'ケムリ', title: '煙の子', group: '火の山', island: 2,
+    id: 'kemuri', no: 38, name: 'ケムリ', title: '煙の子', group: '火の山', island: 2,
     center: { object: 'fire' },
     around: [{ match: { ground: 'ash' }, min: 3 }, { match: ANY, min: 1 }],
     effect: { kind: 'release', range: 1, from: ANY },
@@ -430,7 +431,7 @@ export const CREATURES = Object.freeze([
     hint: '灰に囲まれた火のそばに、誰かがいると',
   },
   {
-    id: 'anahori', no: 37, name: 'アナホリ', title: '穴掘りの子', group: '火の山', island: 2,
+    id: 'anahori', no: 39, name: 'アナホリ', title: '穴掘りの子', group: '火の山', island: 2,
     center: { ground: 'ash', height: 2 },
     around: { match: { ground: 'ash' }, min: 2 },
     effect: { kind: 'lower', range: 1 },
@@ -439,7 +440,7 @@ export const CREATURES = Object.freeze([
     hint: '灰の山のてっぺんで、まわりを掘る',
   },
   {
-    id: 'hibachi', no: 38, name: 'ヒバチ', title: '火鉢の子', group: '火の山', island: 2,
+    id: 'hibachi', no: 40, name: 'ヒバチ', title: '火鉢の子', group: '火の山', island: 2,
     center: { object: 'firewood' },
     around: [{ match: { object: 'fire' }, min: 1, max: 1 }, { match: ANY, max: 0 }],
     effect: { kind: 'grow', range: 1, from: { ground: 'ash', object: null }, object: 'seed' },
@@ -448,7 +449,7 @@ export const CREATURES = Object.freeze([
     hint: 'ひとりで小さな火の番をする',
   },
   {
-    id: 'yamaokoshi', no: 39, name: 'ヤマオコシ', title: '山起こし', group: '火の山', island: 2,
+    id: 'yamaokoshi', no: 41, name: 'ヤマオコシ', title: '山起こし', group: '火の山', island: 2,
     center: { ground: 'lava', height: 0 },
     around: [{ match: ANY, min: 2 }, { match: { ground: 'lava' }, min: 2 }],
     effects: [
@@ -460,7 +461,7 @@ export const CREATURES = Object.freeze([
     hint: 'にぎやかな溶岩の下で、山が目を覚ます',
   },
   {
-    id: 'hinoyamanushi', no: 40, name: 'ヒノヤマヌシ', title: '火の山の主', group: '火の山', island: 2,
+    id: 'hinoyamanushi', no: 48, name: 'ヒノヤマヌシ', title: '火の山の主', group: '火の山', island: 2,
     center: { object: 'fire', height: 2 },
     around: { match: ANY, min: 4 },
     effects: [
@@ -474,7 +475,7 @@ export const CREATURES = Object.freeze([
 
   // ---- 足りない所に足す8匹（判定表 第21回・第22回）。㊶㊷ははじまりの島の巣の生き物（問題・スコアアタックの盤に巣は無い）----
   {
-    id: 'sudachi', no: 41, name: 'スダチ', title: '巣立ちの子', group: '草と森',
+    id: 'sudachi', no: 14, name: 'スダチ', title: '巣立ちの子', group: '草と森',
     center: { ground: 'grass', object: 'nest' },
     around: { match: { object: 'nest' }, min: 2 },
     effect: { kind: 'clear', range: 1, from: { object: 'nest' } },
@@ -483,7 +484,7 @@ export const CREATURES = Object.freeze([
     hint: '巣がいくつも並ぶと、そろって飛び立つ',
   },
   {
-    id: 'iwatsubame', no: 42, name: 'イワツバメ', title: '岩の燕', group: '岩と山',
+    id: 'iwatsubame', no: 20, name: 'イワツバメ', title: '岩の燕', group: '岩と山',
     center: { object: 'rock', minHeight: 1 },
     around: [{ match: { object: 'nest' }, min: 1 }, { match: { object: 'rock' }, min: 1 }],
     effect: { kind: 'release', range: 1, from: ANY },
@@ -492,7 +493,7 @@ export const CREATURES = Object.freeze([
     hint: '高い岩場に巣があると',
   },
   {
-    id: 'nobi', no: 43, name: 'ノビ', title: '野火の子', group: '火の山', island: 2,
+    id: 'nobi', no: 42, name: 'ノビ', title: '野火の子', group: '火の山', island: 2,
     center: { ground: 'grass', object: 'flower' },
     around: { match: { object: 'fire' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { ground: 'grass' }, to: 'barren', object: null },
@@ -501,7 +502,7 @@ export const CREATURES = Object.freeze([
     hint: '花畑に火が近づくと',
   },
   {
-    id: 'minori', no: 44, name: 'ミノリ', title: '実りの子', group: '火の山', island: 2,
+    id: 'minori', no: 43, name: 'ミノリ', title: '実りの子', group: '火の山', island: 2,
     center: { ground: 'ash', object: null },
     around: { match: { object: 'flower' }, min: 3 },
     effect: { kind: 'grow', range: 1, from: { object: 'flower' }, object: 'seed' },
@@ -510,7 +511,7 @@ export const CREATURES = Object.freeze([
     hint: '灰の上で、花に囲まれると',
   },
   {
-    id: 'mebuki', no: 45, name: 'メブキ', title: '芽吹きの子', group: '火の山', island: 2,
+    id: 'mebuki', no: 44, name: 'メブキ', title: '芽吹きの子', group: '火の山', island: 2,
     center: { ground: 'grass', object: null },
     around: { match: { object: 'seed' }, min: 2 },
     effect: { kind: 'convert', range: 1, from: { object: 'seed' }, to: 'grass', object: 'tree' },
@@ -519,7 +520,7 @@ export const CREATURES = Object.freeze([
     hint: '草の上で、まわりの種を見守る',
   },
   {
-    id: 'gankui', no: 46, name: 'ガンクイ', title: '岩食いの子', group: '火の山', island: 2,
+    id: 'gankui', no: 45, name: 'ガンクイ', title: '岩食いの子', group: '火の山', island: 2,
     center: { ground: 'ash' },
     around: { match: { object: 'rock' }, min: 2 },
     effect: { kind: 'clear', range: 1, from: { object: 'rock' } },
@@ -528,7 +529,7 @@ export const CREATURES = Object.freeze([
     hint: '灰の上で、岩をかじる音',
   },
   {
-    id: 'tanikaze', no: 47, name: 'タニカゼ', title: '谷風の子', group: '火の山', island: 2,
+    id: 'tanikaze', no: 46, name: 'タニカゼ', title: '谷風の子', group: '火の山', island: 2,
     center: { ground: 'ash', height: 0 },
     around: [{ match: { height: 2 }, min: 2 }, { match: { ground: 'barren' }, min: 2 }],
     effect: { kind: 'release', range: 1, from: ANY },
@@ -537,7 +538,7 @@ export const CREATURES = Object.freeze([
     hint: '高い所にはさまれた、低い灰の谷',
   },
   {
-    id: 'kazan', no: 48, name: 'カザン', title: '火山の子', group: '火の山', island: 2,
+    id: 'kazan', no: 47, name: 'カザン', title: '火山の子', group: '火の山', island: 2,
     center: { ground: 'ash', height: 2 },
     around: [{ match: { ground: 'lava' }, min: 2 }, { match: { minHeight: 1 }, min: 3 }],
     effect: { kind: 'clear', range: 1 },

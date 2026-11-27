@@ -95,7 +95,8 @@ function renderPalette() {
     b.disabled = !open;
     b.setAttribute('aria-pressed', String(selected === item.id));
     b.innerHTML = `<span class="swatch"></span><span class="label">${item.name}</span>`
-      + (sa ? `<span class="lock">残り${left[item.id]}</span>` : open ? '' : `<span class="lock">${lockText(item)}</span>`);
+      // 鍵の行は開いていても場所を取る（判定表 第30回 UI1 案A：鍵の文がある時だけ欄が高くなり、道具の段がずれた）
+      + `<span class="lock">${sa ? `残り${left[item.id]}` : open ? '　' : lockText(item)}</span>`;
     b.addEventListener('click', () => {
       if (sa) sa.selected = item.id; else { state.selected = item.id; save(); }
       renderPalette();
@@ -146,7 +147,7 @@ function renderMode() {
   $('open-puzzles').textContent = pz || sa ? '箱庭へ' : '挑戦';
   // 島を渡る（図鑑20匹から。判定表 第15回 K2）。問題とスコアアタックの間は出さない
   $('cross').hidden = Boolean(pz || sa) || !mayCross();
-  $('cross').textContent = `⇄ ${ISLANDS[state.island === 2 ? 1 : 2].name}へ`;
+  $('cross').textContent = state.island === 2 ? '⇄ はじまりへ' : '⇄ 火の山へ';
   $('cross').title = `今は${ISLANDS[state.island].name}。押すと渡る（盤はそれぞれ残る）`;
   document.body.dataset.island = String(viewBoard().island === 2 ? 2 : 1);
   if (sa) { renderScoreBar(); renderScoreCast(); }
@@ -277,16 +278,26 @@ function renderBook() {
 function renderAchievements() {
   const got = new Set(state.achieved);
   $('ach-count').textContent = `${got.size} / ${ACHIEVEMENTS.length}`;
-  $('ach-list').replaceChildren(...ACHIEVEMENTS.map((a) => {
-    const li = document.createElement('li');
-    const done = got.has(a.id);
-    li.className = done ? 'got' : 'not-yet';
-    const secret = a.hidden && !done;
-    li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div>
-      <b>${secret ? '？？？' : a.name}</b><small>${a.kind}</small>
-      <p>${secret ? a.teaser : a.text}</p>
-      <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`;
-    return li;
+  const kinds = [...new Set(ACHIEVEMENTS.map((a) => a.kind))];
+  $('ach-list').replaceChildren(...kinds.flatMap((kind) => {
+    const list = ACHIEVEMENTS.filter((a) => a.kind === kind);
+    const h = document.createElement('h3');
+    h.className = 'ach-kind';
+    h.textContent = `${kind}　${list.filter((a) => got.has(a.id)).length}/${list.length}`;
+    const ol = document.createElement('ol');
+    ol.className = 'ach';
+    ol.replaceChildren(...list.map((a) => {
+      const li = document.createElement('li');
+      const done = got.has(a.id);
+      li.className = done ? 'got' : 'not-yet';
+      const secret = a.hidden && !done;
+      li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div>
+        <b>${secret ? '？？？' : a.name}</b>
+        <p>${secret ? a.teaser : a.text}</p>
+        <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`;
+      return li;
+    }));
+    return [h, ol];
   }));
 }
 
@@ -491,54 +502,136 @@ async function onPuzzleCell(k) {
   render();
 }
 
-// 一覧は狙いごとにまとめてたたむ（判定表 第9回 T5）。入門は1つの組。開いておくのは、まだ解いていない開いた問題のある最初の組
-function renderPuzzleList() {
+// 挑戦の一覧（判定表 第31回 案A：縦長すぎた）。上に「はじまりの島／火の山の島／スコアアタック」のタブ、
+// 狙いごとに1行（番号のボタン）。番号を押すと、決まった欄にその問題の詳しいことと「遊ぶ」を出す
+let chTab = null;
+let chPick = null; // 問題の id か、'map:' + 地図の id
+const puzzleIsOpen = (p) => TEST_OPEN || puzzleOpen(p, state.found);
+const mapIsOpen = (m) => TEST_OPEN || mapOpen(m, state.found);
+function puzzleGroups(island) {
   const groups = [];
-  for (const p of PUZZLES) {
-    // 火の山の島の問題は「火の山・」の組（判定表 第25回 P1）。入門も火の山は別の組
-    const fire = p.island === 2;
-    const id = `${fire ? 'fire-' : ''}${p.intro ? 'intro' : p.aim}`;
+  for (const p of PUZZLES.filter((x) => (x.island === 2 ? 2 : 1) === island)) {
+    const id = p.intro ? 'intro' : p.aim;
     let g = groups.find((x) => x.id === id);
-    if (!g) groups.push(g = { id, name: `${fire ? '火の山・' : ''}${p.intro ? '入門' : p.title.replace(/ \d+$/, '')}`, list: [] });
+    if (!g) groups.push(g = { id, name: p.intro ? '入門' : p.title.replace(/ \d+$/, ''), list: [] });
     g.list.push(p);
   }
-  const isOpen = (p) => TEST_OPEN || puzzleOpen(p, state.found);
-  const next = groups.find((g) => g.list.some((p) => isOpen(p) && !state.cleared.includes(p.id)));
-  $('puzzle-list').replaceChildren(...groups.map((g) => {
-    const d = document.createElement('details');
-    d.className = 'puzzle-group';
-    d.open = g === next;
-    const done = g.list.filter((p) => state.cleared.includes(p.id)).length;
-    const opened = g.list.filter(isOpen).length;
-    const s = document.createElement('summary');
-    s.textContent = `${opened ? g.name : '？？？'}　★${done}/${g.list.length}`;
-    const ol = document.createElement('ol');
-    ol.className = 'ach puzzle-list';
-    ol.replaceChildren(...g.list.map(puzzleItem));
-    d.append(s, ol);
-    return d;
-  }), scoreGroup());
+  return groups;
 }
-
-function puzzleItem(p) {
-  const li = document.createElement('li');
-  const open = TEST_OPEN || puzzleOpen(p, state.found);
-  const done = state.cleared.includes(p.id);
-  const names = p.items.map((id) => PLACEABLES.find((x) => x.id === id).name).join('→');
-  li.className = done ? 'done' : open ? 'open' : 'locked';
-  if (open) {
-    li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div><b>${p.title}</b>
-      <p>${p.items.length}手で${p.target}連鎖　置く物：${names}</p>${p.intro && p.note ? `<p class="reward">ねらい：${p.note}</p>` : ''}</div>`;
+function renderPuzzleList() {
+  // 最初に開くタブと問題：まだ解いていない開いた問題のある所
+  const nextOf = (list) => list.find((p) => puzzleIsOpen(p) && !state.cleared.includes(p.id));
+  if (!chTab) chTab = nextOf(PUZZLES.filter((p) => p.island !== 2)) ? 'one' : nextOf(PUZZLES.filter((p) => p.island === 2)) ? 'two' : 'one';
+  const tabs = [['one', ISLANDS[1].name], ['two', ISLANDS[2].name], ['score', 'スコアアタック']];
+  $('ch-tabs').replaceChildren(...tabs.map(([id, name]) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = '遊ぶ';
-    b.addEventListener('click', () => { $('puzzles').close(); startPuzzle(p); });
-    li.append(b);
+    b.className = 'tab';
+    b.dataset.act = `ch-${id}`;
+    b.setAttribute('aria-selected', String(id === chTab));
+    const n = id === 'score' ? `★${MAPS.reduce((t, m) => t + starsOf(m, bestScore(state.best[m.id])), 0)}/${MAPS.length * 3}`
+      : (() => { const list = PUZZLES.filter((p) => (p.island === 2) === (id === 'two')); return `★${list.filter((p) => state.cleared.includes(p.id)).length}/${list.length}`; })();
+    b.textContent = `${name} ${n}`;
+    b.addEventListener('click', () => { chTab = id; chPick = null; renderPuzzleList(); });
+    return b;
+  }));
+  const rows = document.createElement('ol');
+  rows.className = 'ch-rows';
+  if (chTab === 'score') {
+    if (!chPick?.startsWith('map:')) chPick = `map:${(MAPS.find((m) => mapIsOpen(m) && starsOf(m, bestScore(state.best[m.id])) < 3) ?? MAPS[0]).id}`;
+    rows.replaceChildren(...MAPS.map((m) => {
+      const li = document.createElement('li');
+      const open = mapIsOpen(m);
+      li.className = `ch-row map${open ? '' : ' locked'}`;
+      const stars = starsOf(m, bestScore(state.best[m.id]));
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `ch-pick${stars ? ' done' : ''}${open ? '' : ' locked'}`;
+      b.dataset.act = 'ch-pick';
+      b.setAttribute('aria-pressed', String(chPick === `map:${m.id}`));
+      b.textContent = open ? starText(stars) : '？';
+      b.style.minWidth = '5em';
+      b.addEventListener('click', () => { chPick = `map:${m.id}`; renderPuzzleList(); });
+      const name = document.createElement('span');
+      name.className = 'ch-name';
+      name.innerHTML = open ? `${m.title}<small>${m.island === 2 ? ISLANDS[2].name : ISLANDS[1].name}</small>` : '？？？';
+      li.append(name, b);
+      return li;
+    }));
   } else {
-    const left = puzzleCreatures(p).filter((id) => !state.found.includes(id)).length;
-    li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>図鑑であと${left}匹見つけると開く</p></div>`;
+    const groups = puzzleGroups(chTab === 'two' ? 2 : 1);
+    const all = groups.flatMap((g) => g.list);
+    if (!all.some((p) => p.id === chPick)) chPick = (nextOf(all) ?? all[0]).id;
+    rows.replaceChildren(...groups.map((g) => {
+      const li = document.createElement('li');
+      const opened = g.list.filter(puzzleIsOpen).length;
+      li.className = `ch-row${opened ? '' : ' locked'}`;
+      const name = document.createElement('span');
+      name.className = 'ch-name';
+      name.innerHTML = `${opened ? g.name : '？？？'}<small>★${g.list.filter((p) => state.cleared.includes(p.id)).length}/${g.list.length}</small>`;
+      li.append(name, ...g.list.map((p, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        const done = state.cleared.includes(p.id);
+        b.className = `ch-pick${done ? ' done' : ''}${puzzleIsOpen(p) ? '' : ' locked'}`;
+        b.dataset.act = 'ch-pick';
+        b.setAttribute('aria-pressed', String(p.id === chPick));
+        b.textContent = done ? `★${i + 1}` : String(i + 1);
+        b.title = puzzleIsOpen(p) ? p.title : 'まだ開いていない';
+        b.addEventListener('click', () => { chPick = p.id; renderPuzzleList(); });
+        return b;
+      }));
+      return li;
+    }));
   }
-  return li;
+  const detail = document.createElement('div');
+  detail.className = 'ch-detail';
+  detail.dataset.ui = 'challenge-detail';
+  if (chPick.startsWith('map:')) detail.append(...mapDetail(MAPS.find((m) => `map:${m.id}` === chPick)));
+  else detail.append(...puzzleDetail(PUZZLES.find((p) => p.id === chPick)));
+  $('puzzle-list').replaceChildren(detail, rows);
+}
+
+const el = (tag, cls, html) => Object.assign(document.createElement(tag), cls ? { className: cls } : {}, html !== undefined ? { innerHTML: html } : {});
+function playButton(onPlay) {
+  const b = el('button', 'ch-play');
+  b.type = 'button';
+  b.dataset.act = 'ch-play';
+  b.textContent = '遊ぶ';
+  b.addEventListener('click', () => { $('puzzles').close(); onPlay(); });
+  return b;
+}
+function puzzleDetail(p) {
+  if (!puzzleIsOpen(p)) {
+    const left = puzzleCreatures(p).filter((id) => !state.found.includes(id)).length;
+    return [el('h3', '', '？？？'), el('p', '', `図鑑であと${left}匹見つけると開く`),
+      el('p', 'book-note', '問題に出てくる生き物を図鑑で全部見つけると開く。')];
+  }
+  const done = state.cleared.includes(p.id);
+  const names = p.items.map((id) => PLACEABLES.find((x) => x.id === id).name).join('→');
+  return [
+    el('h3', '', `${done ? '★ ' : ''}${p.title}`),
+    el('p', '', `${p.items.length}手で${p.target}連鎖　置く物：${names}`),
+    ...(p.intro && p.note ? [el('p', 'book-note', `ねらい：${p.note}`)] : []),
+    el('p', 'book-note', '決まった順に置いて、どの手でもよいので目標の連鎖を出す。'),
+    playButton(() => startPuzzle(p)),
+  ];
+}
+function mapDetail(m) {
+  if (!mapIsOpen(m)) {
+    return [el('h3', '', '？？？'), el('p', '', m.unlock2 !== undefined ? `火の山の生き物を${m.unlock2}匹見つけると開く` : `図鑑で${m.unlockAt}匹見つけると開く`)];
+  }
+  const best = bestScore(state.best[m.id]);
+  const stars = starsOf(m, best);
+  const cells = Object.keys(mapBoard(m).cells).length;
+  const names = Object.entries(m.stock).map(([id, n]) => `${PLACEABLES.find((x) => x.id === id).name}${n}`).join('・');
+  return [
+    el('h3', '', m.title),
+    el('p', '', `${cells}マス・${movesOf(m)}手　置く物：${names}`),
+    el('p', '', `${state.best[m.id] !== undefined ? `記録 ${best}点 ${starText(stars)}` : 'まだ遊んでいない'}　★の点：${m.stars.join('・')}`),
+    el('p', 'book-note', `置ける物を自由な順に全部置いて、点を集める。${SCORE_TEXT}。`),
+    playButton(() => startScore(m)),
+  ];
 }
 
 // ---- スコアアタック（工程6）----
@@ -632,45 +725,6 @@ async function onScoreCell(k) {
   save();
   render();
   renderPalette();
-}
-
-// 問題の一覧の最後に、スコアアタックの組
-function scoreGroup() {
-  const d = document.createElement('details');
-  d.className = 'puzzle-group';
-  const isOpenMap = (m) => TEST_OPEN || mapOpen(m, state.found);
-  const s = document.createElement('summary');
-  const starsAll = MAPS.reduce((n, m) => n + starsOf(m, bestScore(state.best[m.id])), 0);
-  s.textContent = `スコアアタック　★${starsAll}/${MAPS.length * 3}`;
-  const note = document.createElement('p');
-  note.className = 'book-note';
-  note.textContent = `置ける物を自由な順に全部置いて、点を集める。${SCORE_TEXT}。`;
-  const ol = document.createElement('ol');
-  ol.className = 'ach puzzle-list';
-  ol.replaceChildren(...MAPS.map((m) => {
-    const li = document.createElement('li');
-    if (!isOpenMap(m)) {
-      li.className = 'locked';
-      li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>${m.unlock2 !== undefined ? `火の山の生き物を${m.unlock2}匹見つけると開く` : `図鑑で${m.unlockAt}匹見つけると開く`}</p></div>`;
-      return li;
-    }
-    const best = bestScore(state.best[m.id]);
-    const stars = starsOf(m, best);
-    const cells = Object.keys(mapBoard(m).cells).length;
-    const names = Object.entries(m.stock).map(([id, n]) => `${PLACEABLES.find((x) => x.id === id).name}${n}`).join('・');
-    li.className = stars ? 'done' : 'open';
-    li.innerHTML = `<span class="ach-mark">${stars ? '★' : '☆'}</span><div><b>${m.title}</b>
-      <p>${cells}マス・${movesOf(m)}手　置く物：${names}</p>
-      <p class="reward">${state.best[m.id] !== undefined ? `記録 ${best}点 ${starText(stars)}` : 'まだ遊んでいない'}　★の点：${m.stars.join('・')}</p></div>`;
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = '遊ぶ';
-    b.addEventListener('click', () => { $('puzzles').close(); startScore(m); });
-    li.append(b);
-    return li;
-  }));
-  d.append(s, note, ol);
-  return d;
 }
 
 // ---- 置く ----
@@ -905,6 +959,8 @@ $('open-puzzles').addEventListener('click', () => {
   if (busy) return;
   if (pz) { leavePuzzle(); return; }
   if (sa) { leaveScore(); return; }
+  chTab = null;
+  chPick = null;
   renderPuzzleList();
   $('puzzles').showModal();
 });

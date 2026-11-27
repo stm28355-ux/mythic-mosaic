@@ -54,7 +54,8 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .settings { display: grid; gap: 6px; margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: rgb(255 255 255 / 0.05); font-size: 0.9rem; }
 .settings label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
 .settings input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
-#board { display: block; width: 100%; height: auto; touch-action: manipulation; user-select: none; }
+/* 盤の縦横の比は決めておく（判定表 第31回 の測り直し：島によって盤の形が違い、スマホで下の欄が 5px ずれた） */
+#board { display: block; width: 100%; height: auto; aspect-ratio: 1.08; touch-action: manipulation; user-select: none; }
 .chain {
   position: absolute; top: 4px; right: 4px; margin: 0;
   font-size: 1.6rem; font-weight: 800; color: var(--accent);
@@ -179,6 +180,16 @@ dialog {
 }
 dialog::backdrop { background: rgb(0 0 0 / 0.55); }
 dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
+/* 大きい枚は大きさを決める（判定表 第31回 F1：中身で大きさが変わり、切り替えるたびに枚ごと動いていた）。
+   PC は幅 1000px・高さは画面の9割ほど、スマホは画面いっぱい。中身は .dlg-body の中でスクロール、閉じるは下に固定 */
+dialog.panel-dlg[open] { display: flex; flex-direction: column; width: min(1000px, 94vw); height: min(88vh, 860px); max-width: none; max-height: none; }
+.panel-dlg > h2, .panel-dlg > .tabs, .panel-dlg > .dlg-foot { flex: none; }
+.dlg-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; scrollbar-gutter: stable; }
+.dlg-foot { margin-top: 8px; }
+dialog.steps-dlg { width: min(640px, 94vw); }
+@media (max-width: 700px) {
+  dialog.panel-dlg[open] { width: 100vw; height: 100dvh; margin: 0; border-radius: 0; border: none; }
+}
 .book { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; }
 .book li { display: flex; gap: 10px; align-items: flex-start; }
 .book .token {
@@ -201,8 +212,16 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .book-note { margin: 0 0 8px; color: var(--quiet); font-size: 0.9rem; }
 /* 図鑑：島ごとのタイルと、選んだ生き物の欄（判定表 第29回 Z3） */
 .book-wrap { display: block; }
-.book-entry { display: flex; gap: 10px; align-items: flex-start; min-height: 132px; padding: 8px; margin-bottom: 8px; border-radius: 10px; background: rgb(255 255 255 / 0.05); }
-.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.book-entry { display: flex; gap: 10px; align-items: flex-start; height: 150px; overflow-y: auto; padding: 8px; margin-bottom: 8px; border-radius: 10px; background: rgb(255 255 255 / 0.05); }
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 6px; }
+@media (min-width: 900px) {
+  .book-wrap { display: grid; grid-template-columns: 320px 1fr; gap: 8px 16px; align-items: start; }
+  .book-wrap > .book-isles { grid-column: 1 / -1; }
+  .book-entry { height: auto; min-height: 200px; position: sticky; top: 0; margin: 0; }
+}
+/* 実績：種類ごとに分け、PC は3列（判定表 第31回 F2） */
+.ach-kind { margin: 10px 0 4px; font-size: 0.95rem; color: var(--accent); }
+.ach-groups .ach { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px 16px; }
 .book-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; min-height: 64px; border: 2px solid transparent; border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
 .book-tile[aria-pressed="true"] { border-color: var(--accent); }
 .book-tile .book-name { font-size: 0.7rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -229,6 +248,8 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .toast.show { opacity: 1; transform: none; }
 .help { padding-left: 1.2em; margin-top: 0.2em; }
 .help-head { margin: 1em 0 0; font-size: 1rem; color: var(--accent); }
+/* 遊び方：PC は3つの見出しを3列（判定表 第31回 F2） */
+@media (min-width: 900px) { .help-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 20px; } }
 .help-note { color: var(--quiet); font-size: 0.9rem; }
 .help-actions { display: flex; gap: 8px; justify-content: space-between; }
 .danger { border-color: #c56a5a !important; color: #f0a596 !important; }
@@ -245,3 +266,32 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
   #board { max-height: calc(100vh - 80px); }
   .puzzle-cast { max-height: calc(100vh - 480px); overflow: auto; }
 }
+
+/* 挑戦の一覧（判定表 第31回 案A）。PC は左に一覧・右に選んだ問題の欄。スマホは上に欄・下に一覧 */
+.ch-wrap { display: grid; gap: 10px; }
+.ch-detail { height: 190px; overflow-y: auto; padding: 10px; border-radius: 10px; background: rgb(255 255 255 / 0.05); display: grid; align-content: start; gap: 4px; }
+.ch-detail h3 { margin: 0; font-size: 1.05rem; color: var(--accent); }
+.ch-detail p { margin: 0; font-size: 0.9rem; }
+.ch-detail .ch-play { justify-self: start; min-height: 44px; padding: 0 22px; margin-top: 4px; }
+.ch-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ch-row { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); }
+.ch-row .ch-name { flex: 1; min-width: 0; }
+.ch-row .ch-name small { color: var(--quiet); margin-left: 6px; }
+.ch-row.locked .ch-name { color: var(--quiet); }
+.ch-pick { min-width: 44px; min-height: 44px; border-radius: 8px; border: 2px solid #444b5a; background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+.ch-pick.done { color: var(--accent); }
+.ch-pick.locked { color: var(--quiet); }
+.ch-pick[aria-pressed="true"] { border-color: var(--accent); background: rgb(224 184 90 / 0.15); }
+.ch-row.map { cursor: pointer; }
+@media (min-width: 900px) {
+  .ch-wrap { grid-template-columns: 1fr 360px; align-items: start; }
+  .ch-detail { order: 2; height: auto; min-height: 260px; position: sticky; top: 0; }
+}
+/* 箱庭とスコアアタックの置く物の欄は、いつも2段ぶん（判定表 第31回 F4・UI1 案A：鍵の行がある時だけ高くなっていた） */
+.palette { grid-auto-rows: 72px; min-height: calc(2 * 72px + 6px); }
+.palette .item { height: 72px; min-height: 0; }
+.palette .lock { min-height: 2.4em; line-height: 1.2; text-align: center; display: flex; align-items: center; }
+/* 問題の題名の欄は2行ぶん取っておく（判定表 第31回 F5） */
+.puzzle-head .puzzle-title { min-height: 3.2em; display: flex; align-items: center; }
+/* スクロールバーの場所をいつも取っておく（判定表 第31回 F3） */
+html { scrollbar-gutter: stable; }

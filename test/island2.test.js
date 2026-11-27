@@ -13,7 +13,7 @@ const island1Found = CREATURES.filter((c) => !c.island).map((c) => c.id); // 24�
 
 test('火の山の生き物は㉕から続く番号（試作6匹＋第18回の5匹）', () => {
   assert.deepEqual(ISLAND2.slice(0, 6), ['hinoko', 'haimogura', 'tsukisusu', 'tanebouzu', 'fuigo', 'homuradori']);
-  assert.deepEqual(CREATURES.filter((c) => c.island === 2).map((c) => c.no), [...Array.from({ length: 16 }, (_, i) => 25 + i), 43, 44, 45, 46, 47, 48]);
+  assert.deepEqual(CREATURES.filter((c) => c.island === 2).map((c) => c.no).sort((x, y) => x - y), Array.from({ length: 22 }, (_, i) => 27 + i));
 });
 
 test('島ごとに置く物は8つ（案②）。第2の島に水・砂・岩・巣は置けず（水は生き物だけが出す＝第19回 U6）、第1の島に灰・溶岩・薪・種は置けない', () => {

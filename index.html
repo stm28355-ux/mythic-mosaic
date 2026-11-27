@@ -57,34 +57,41 @@
   <p class="version">試作 版 <span id="version"></span></p>
 </main>
 
-<dialog id="book">
+<dialog id="book" class="panel-dlg">
   <h2>図鑑</h2>
   <div class="tabs" role="tablist">
     <button type="button" class="tab" role="tab" data-tab="creatures">生き物</button>
     <button type="button" class="tab" role="tab" data-tab="achievements">実績</button>
   </div>
-  <p id="book-note" class="book-note"></p>
-  <div id="book-list" class="book book-wrap" data-ui="book"></div>
-  <div id="ach-panel" hidden>
-    <p class="book-note">取った実績 <span id="ach-count"></span>（ごほうびの見た目は、これから作る）</p>
-    <ol id="ach-list" class="ach"></ol>
+  <div class="dlg-body">
+    <p id="book-note" class="book-note"></p>
+    <div id="book-list" class="book book-wrap" data-ui="book"></div>
+    <div id="ach-panel" hidden>
+      <p class="book-note">取った実績 <span id="ach-count"></span>（ごほうびの見た目は、これから作る）</p>
+      <div id="ach-list" class="ach-groups"></div>
+    </div>
   </div>
-  <form method="dialog"><button>閉じる</button></form>
+  <form method="dialog" class="dlg-foot"><button>閉じる</button></form>
 </dialog>
 
-<dialog id="puzzles">
+<dialog id="puzzles" class="panel-dlg">
   <h2>挑戦（連鎖問題とスコアアタック）</h2>
-  <p class="book-note">決まった順に置く物を置いて、目標の連鎖を出す。どの手で出してもよく、正解の置き方は1つとは限らない。問題に出てくる生き物を図鑑で全部見つけると開く。</p>
-  <div id="puzzle-list" class="puzzle-groups"></div>
-  <form method="dialog"><button>閉じる</button></form>
+  <div id="ch-tabs" class="tabs" role="tablist"></div>
+  <div class="dlg-body">
+    <div id="puzzle-list" class="ch-wrap" data-ui="challenge"></div>
+  </div>
+  <form method="dialog" class="dlg-foot"><button>閉じる</button></form>
 </dialog>
 
-<dialog id="help">
+<dialog id="help" class="panel-dlg">
   <h2>遊び方と設定（試作）</h2>
+  <div class="dlg-body">
   <div class="settings" data-ui="settings">
     <label><input type="checkbox" id="set-fx" data-act="set-fx"> エフェクト（生き物が出る時・効果を当てる時の動き。切ると待たずに進む）</label>
     <label><input type="checkbox" id="set-preview" data-act="set-preview"> 置く前に知らせる（マスにマウスを乗せる・長押しすると、最初に出る生き物が分かる）</label>
   </div>
+  <div class="help-cols">
+  <section class="help-col">
   <h3 class="help-head">はじめに</h3>
   <ol class="help">
     <li>下で置く物を選び、島のマスを押して置く。</li>
@@ -98,28 +105,35 @@
     <li>「置く前に知らせる」が入っていると、マスにマウスを乗せる（スマホは長押し）だけで、置いたときに最初に出る生き物が分かる。まだ見つけていない生き物は「？？？」。連鎖問題では出ない。</li>
     <li>図鑑の「実績」で、取った実績を見られる。</li>
   </ol>
+  </section>
+  <section class="help-col">
   <h3 class="help-head">火の山の島</h3>
   <ol class="help">
-    <li>図鑑が20匹になると、海の向こうの「火の山の島」へ渡れる（上の「⇄ 火の山の島へ」）。2つの島の盤は別々に残り、図鑑と実績は同じ。</li>
+    <li>図鑑が20匹になると、海の向こうの「火の山の島」へ渡れる（上の「⇄ 火の山へ」）。2つの島の盤は別々に残り、図鑑と実績は同じ。</li>
     <li>火の山の島では、水・砂・岩・巣の代わりに灰・溶岩・薪が置ける。炎と、火の山の島の水は、手では置けず生き物だけが出す。</li>
     <li>火の山の生き物は火の山の島にしか出ない。はじまりの島の生き物も、形ができれば火の山の島に出る（砂と巣の生き物は出ない）。</li>
     <li>丘と谷は火の山の生き物3匹、種は5匹で開く。島は火の山の生き物3匹・6匹で広がる。谷は高さを1下げる（はじまりの島でも使える）。</li>
     <li>隣の生き物を反対側へ1マス押す生き物がいる。押す先に生き物がいると動かない。島の外へ押された生き物は帰る。</li>
   </ol>
+  </section>
+  <section class="help-col">
   <h3 class="help-head">挑戦（連鎖問題とスコアアタック）</h3>
   <ol class="help">
     <li>「挑戦」の連鎖問題では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。「火の山・」の組は火の山の島の盤で解く。</li>
     <li>一覧の下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。はじまりの島の地図は図鑑の数、火の山の地図は火の山の生き物の数で開く。</li>
     <li>点は出た生き物1匹に1点、1手の連鎖が3・5・8段に届くと追加点。</li>
   </ol>
+  </section>
+  </div>
   <p class="help-note">生き物の居るマスには置けない（先に帰す）。帰しただけでは連鎖は起きない。地面を置くと上の物（木・花・岩・巣）は消え、高さは残る。岩と巣は地面を変えずに上に置く。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
-  <form method="dialog" class="help-actions">
+  </div>
+  <form method="dialog" class="help-actions dlg-foot">
     <button>閉じる</button>
     <button type="button" id="reset" class="danger">記録を全部消す</button>
   </form>
 </dialog>
 
-<dialog id="steps" data-ui="steps">
+<dialog id="steps" class="steps-dlg" data-ui="steps">
   <h2>スコアアタックの手順</h2>
   <div class="tabs" role="tablist">
     <button type="button" class="tab" role="tab" id="steps-now" data-act="steps-now">今の手順</button>
@@ -127,7 +141,8 @@
   </div>
   <textarea id="steps-text" class="steps-text" rows="12" readonly></textarea>
   <p id="steps-note" class="book-note"></p>
-  <form method="dialog" class="help-actions">
+  </div>
+  <form method="dialog" class="help-actions dlg-foot">
     <button type="button" id="steps-copy" data-act="steps-copy">コピー</button>
     <button>閉じる</button>
   </form>

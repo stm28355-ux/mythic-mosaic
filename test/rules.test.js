@@ -194,7 +194,12 @@ test('生き物のデータの形がそろっている', () => {
   }
   // 第1の島24匹＋火の山の生き物16匹＋第22回の8匹（はじまりの島の巣の2匹・火の山の6匹）
   assert.equal(CREATURES.length, 48);
-  assert.deepEqual(CREATURES.map((c) => c.no), Array.from({ length: 48 }, (_, i) => i + 1));
+  assert.deepEqual(CREATURES.map((c) => c.no).sort((x, y) => x - y), Array.from({ length: 48 }, (_, i) => i + 1));
+  // 番号（第31回）：はじまりの島が①〜㉖でハジマリが最後、火の山が㉗〜㊽でヒノヤマヌシが最後
+  const byNo = Object.fromEntries(CREATURES.map((c) => [c.no, c]));
+  assert.equal(byNo[26].id, 'hajimari');
+  assert.equal(byNo[48].id, 'hinoyamanushi');
+  assert.ok(CREATURES.every((c) => (c.island === 2) === (c.no >= 27)));
 });
 
 test('帰す：生き物だけがいなくなり、地面・木・高さは残り、連鎖は起こさない（#1）', () => {
