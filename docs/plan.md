@@ -37,6 +37,7 @@
 | 2026-11-27 | 第29回 工程9：最後の調整でやること https://claude.ai/artifact/BQHf8feJcYn14bRqT8ZJ6E | Z1・Z2・Z4〜Z6 OK。Z3 OK（図鑑は縦長すぎるので調整）。Z7 直す：機能を一点追加、スコアアタックのクリア手順を出力できるように → 0.23.0 |
 | 2026-11-27 | 第30回 工程9：図鑑・手順の書き出しと画面の採点 https://claude.ai/artifact/GkCNdMv2TNr1HxJzs9Vtvr | C1〜C3 OK。UI1〜UI3 案A。一言：図鑑の島・実績の切り替えでずれる（直し漏れ）、全体に縦長なので横にも出す、図鑑の番号（ハジマリは島の最後、巣の鳥の位置）。人の頼み：全体を見直し直す、挑戦の折りたたみ方を考える |
 | 2026-11-27 | 第31回 工程9：画面の見直しと挑戦の一覧 https://claude.ai/artifact/NnVgs8Cr9R2PySZVKsGoD1 | F1〜F6・N1・N2 OK、挑戦は案A → 0.24.0 |
+| 2026-11-27 | 第32回 工程9：画面の直しを触って確かめる https://claude.ai/artifact/NyvjcDmPY3DBypoF3YXUaQ | 判定待ち |
 
 ## 作るときの決めごと
 
