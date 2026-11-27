@@ -2,8 +2,8 @@
 // rows は (0,0) 中心・半径4の六角の行（上から r = -4 … 4。文字数は 5・6・7・8・9・8・7・6・5）。
 //   . 地図の外　o 荒れ地　w 水　g 草　s 砂　m 湿地　1・2 高さ1・2の荒れ地　r 岩（荒れ地）　t 木（草）　S 高さ1の砂
 // stock＝置ける物の数（この数を全部置いたら終わり）、unlockAt＝開くのに要る図鑑の数、
-// stars＝★1・★2・★3 に要る点（tools/measure-score.mjs で測った：★1＝欲ばりの真ん中、★2＝欲ばりの一番、★3＝先読みの7割。
-//   第10回で「人の記録で直さなくてよい」）
+// stars＝★1・★2・★3 に要る点（はじめは tools/measure-score.mjs の目安。2026-11-27 1.0.0 のあと、人が切りのよい数に決め直した）。
+// 見つかっている最高点は docs/score-records.md
 export const MAPS = Object.freeze([
   {
     id: 'irie', title: '入り江の浜', unlockAt: 12,
@@ -19,7 +19,7 @@ export const MAPS = Object.freeze([
       '..oo.',
     ],
     stock: { grass: 4, water: 4, sand: 3, hill: 2 },
-    stars: [14, 74, 125],
+    stars: [20, 70, 120],
   },
   {
     id: 'moriato', title: '森の跡', unlockAt: 15,
@@ -35,7 +35,7 @@ export const MAPS = Object.freeze([
       '..oo.',
     ],
     stock: { grass: 5, water: 4, sand: 3, hill: 2 },
-    stars: [41, 79, 80],
+    stars: [40, 60, 80],
   },
   {
     id: 'futago', title: '双子の丘', unlockAt: 18,
@@ -51,7 +51,7 @@ export const MAPS = Object.freeze([
       '.oo..',
     ],
     stock: { grass: 5, water: 5, sand: 4, hill: 2, rock: 2 },
-    stars: [61, 85, 127],
+    stars: [60, 90, 120],
   },
   {
     id: 'kiri', title: '霧の湿原', unlockAt: 20,
@@ -67,7 +67,7 @@ export const MAPS = Object.freeze([
       '.ooo.',
     ],
     stock: { grass: 4, water: 5, sand: 4, hill: 2, rock: 1 },
-    stars: [53, 102, 103],
+    stars: [40, 70, 100],
   },
   {
     id: 'ooshima', title: '大きな島', unlockAt: 22,
@@ -83,7 +83,7 @@ export const MAPS = Object.freeze([
       'oo1oo',
     ],
     stock: { grass: 6, water: 6, sand: 5, hill: 3, rock: 2 },
-    stars: [65, 118, 155],
+    stars: [70, 120, 160],
   },
   // ---- 火の山の島の地図（判定表 第25回 P5。火の山の生き物の数で開く。a 灰・A 高さ1の灰・l 溶岩・L 高さ1の溶岩・f 薪）----
   {
@@ -100,7 +100,7 @@ export const MAPS = Object.freeze([
       'oo2oo',
     ],
     stock: { ash: 4, lava: 3, firewood: 4, hill: 2, grass: 2 },
-    stars: [73, 89, 151],
+    stars: [70, 100, 150],
   },
   {
     id: 'yoganodani', title: '溶岩の谷', island: 2, unlock2: 12,
@@ -116,7 +116,7 @@ export const MAPS = Object.freeze([
       'oo1o2',
     ],
     stock: { lava: 4, ash: 4, hill: 3, valley: 2, firewood: 3 },
-    stars: [122, 148, 155],
+    stars: [120, 140, 160],
   },
   {
     id: 'kakou', title: '火口のまわり', island: 2, unlock2: 18,
@@ -132,6 +132,6 @@ export const MAPS = Object.freeze([
       'oo1oo',
     ],
     stock: { ash: 5, lava: 4, firewood: 4, hill: 3, valley: 2, grass: 2, seed: 2 },
-    stars: [99, 117, 229],
+    stars: [100, 150, 230],
   },
 ]);

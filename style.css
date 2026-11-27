@@ -301,3 +301,7 @@ dialog.steps-dlg { width: min(640px, 94vw); }
 .puzzle-head .puzzle-title { min-height: 3.2em; display: flex; align-items: center; }
 /* スクロールバーの場所をいつも取っておく（判定表 第31回 F3） */
 html { scrollbar-gutter: stable; }
+/* 島の飾り（実績のごほうび） */
+.deco { pointer-events: none; }
+.ach li { position: relative; }
+.ach .ach-deco { flex: none; margin-left: auto; image-rendering: pixelated; }

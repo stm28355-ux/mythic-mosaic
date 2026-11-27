@@ -4,6 +4,7 @@ import { ISLAND_STAGES } from '../core/hex.js';
 import { CREATURES } from '../core/creatures.js';
 import { creatureSvg } from '../art/creatures.js';
 import { objectSvg } from '../art/objects.js';
+import { decoSvg } from '../art/decorations.js';
 
 export const SIZE = 30;      // マスの大きさ（中心から頂点）
 export const LIFT = 6;       // 高さ1あたりの持ち上げ
@@ -116,4 +117,29 @@ export function drawBoard(svg, board, marks = {}) {
     }
     svg.append(g);
   }
+  if (marks.deco?.length && !board.puzzle) drawDecorations(svg, board, viewBox, marks.deco);
+}
+
+// 島の飾り（実績のごほうび）：見える範囲の四すみの空いた所に置く。マスに重なる所には置かない。押すのを邪魔しない
+const DECO = SIZE * 1.6;
+function drawDecorations(svg, board, viewBox, ids) {
+  const [x0, y0, w, h] = viewBox.split(' ').map(Number);
+  const m = DECO / 2 + 2;
+  const step = DECO + 2;
+  // すみごとに、角 → 横へ1つ → 縦へ1つ の順
+  const slots = [];
+  for (const [sx, sy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+    const cx = sx ? x0 + w - m : x0 + m;
+    const cy = sy ? y0 + h - m : y0 + m;
+    const dx = sx ? -step : step;
+    const dy = sy ? -step : step;
+    slots.push([cx, cy], [cx + dx, cy], [cx, cy + dy]);
+  }
+  const order = [0, 3, 6, 9, 1, 4, 7, 10, 2, 5, 8, 11].map((i) => slots[i]);
+  const centers = Object.values(board.cells).map((c) => toPixel(c.q, c.r, SIZE));
+  const free = order.filter(([x, y]) => centers.every(([cx, cy]) => Math.hypot(cx - x, cy - y) > SIZE + DECO * 0.45));
+  ids.slice(0, free.length).forEach((id, i) => {
+    const [x, y] = free[i];
+    svg.append(el('image', { href: dataUri(decoSvg(id, 32)), x: x - DECO / 2, y: y - DECO / 2, width: DECO, height: DECO, class: 'deco', 'data-deco': id }));
+  });
 }

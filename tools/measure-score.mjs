@@ -1,5 +1,5 @@
 // スコアアタックの測る道具（ゲームには出ない）。工程6：星の目安を決めるため。
-//   node tools/measure-score.mjs [地図id] [--runs=300] [--beam=200] [--names]
+//   node tools/measure-score.mjs [地図id] [--runs=300] [--beam=200] [--names] [--steps]
 // 3人の遊び手で、地図ごとに点を測る（点は節目で追加点。判定表 第10回）：
 //   でたらめ … 置ける所と物をでたらめに選ぶ（runs 回）
 //   欲ばり   … 毎手、その手の点が一番大きい所と物を選ぶ（同じ点はでたらめに。runs/10 回）
@@ -9,7 +9,7 @@ import { place, whyNotPlace, readyShapes } from '../src/core/rules.js';
 import { parseKey } from '../src/core/hex.js';
 import { makeRng } from '../src/core/rng.js';
 import { MAPS } from '../src/data/maps.js';
-import { mapBoard, moveScore } from '../src/core/score.js';
+import { mapBoard, moveScore, stepsText } from '../src/core/score.js';
 import { CREATURES } from '../src/core/creatures.js';
 
 const flags = Object.fromEntries(process.argv.slice(2).filter((a) => a.startsWith('--')).map((a) => a.slice(2).split('=')));
@@ -62,7 +62,7 @@ const greedyChooser = (rng) => (board, _l, opts) => {
 
 // 先読み：合計点の高い盤を BEAM 個残す
 function beam(map, rng) {
-  let states = [{ board: mapBoard(map), left: { ...map.stock }, total: 0, longest: 0 }];
+  let states = [{ board: mapBoard(map), left: { ...map.stock }, total: 0, longest: 0, moves: [] }];
   const total0 = Object.values(map.stock).reduce((a, b) => a + b, 0);
   for (let t = 0; t < total0; t++) {
     const next = [];
@@ -70,7 +70,8 @@ function beam(map, rng) {
       for (const [q, r, it] of options(s.board, s.left)) {
         const res = place(s.board, q, r, it);
         next.push({ board: res.board, left: { ...s.left, [it]: s.left[it] - 1 }, total: s.total + moveScore(res.steps),
-          longest: Math.max(s.longest, res.steps.length), tie: rng.next() });
+          longest: Math.max(s.longest, res.steps.length), tie: rng.next(),
+          moves: [...s.moves, { key: `${q},${r}`, item: it, score: moveScore(res.steps), chain: res.steps.length }] });
       }
     }
     if (!next.length) break;
@@ -90,6 +91,8 @@ console.log('星の目安：★1＝欲ばりの真ん中、★2＝欲ばりの�
 console.log();
 console.log('| 地図 | マス・手 | 置く前に出る形 | でたらめ 平均 | 欲ばり 真ん中 | 欲ばり 一番 | 先読み | 一番長い連鎖（でたらめ・欲ばり・先読み） | 出てきた生き物 | 星の目安 | 秒 |');
 console.log('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+const FENCE = '`'.repeat(3);
+const bests = [];
 for (const map of MAPS.filter((m) => !only || m.id === only)) {
   const t0 = Date.now();
   const b0 = mapBoard(map);
@@ -104,5 +107,8 @@ for (const map of MAPS.filter((m) => !only || m.id === only)) {
   const s2 = Math.max(s1 + 1, ...gr.map((x) => x.total));
   const s3 = Math.max(s2 + 1, Math.round(bm.total * 0.7));
   console.log(`| ${map.title}（${map.id}） | ${Object.keys(b0.cells).length}・${moves} | ${readyShapes(b0).length} | ${avg(rnd.map((x) => x.total))} | ${s1} | ${Math.max(...gr.map((x) => x.total))} | ${bm.total} | ${Math.max(...rnd.map((x) => x.longest))}・${Math.max(...gr.map((x) => x.longest))}・${bm.longest} | ${seen.size}種 | ${s1}・${s2}・${s3} | ${((Date.now() - t0) / 1000).toFixed(1)} |`);
+  // --steps：先読みの一番よい置き方を、ゲームの「手順を書き出す」と同じ文で出す
+  if ('steps' in flags) bests.push(['### ' + map.title + '（' + bm.total + '点）', '', FENCE, stepsText(map, bm.moves), FENCE, ''].join('\n'));
   if (flags.names) console.log(`|  |  |  |  |  |  |  |  | ${[...seen].map(name).join('・')} |  |  |`);
 }
+if (bests.length) { console.log(); console.log(bests.join('\n')); }

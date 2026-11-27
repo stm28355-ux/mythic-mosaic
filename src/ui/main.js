@@ -11,6 +11,7 @@ import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, bestScore, SCORE_TEXT
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
 import { creatureSvg } from '../art/creatures.js';
+import { DECO_DRAW, DECO_ISLAND, decoSvg } from '../art/decorations.js';
 import { fxLayer, ensureDefs, spawnFx, actionFx, impactFx, placeFx } from './fx.js';
 
 const SAVE_KEY = 'mythic-mosaic:save';
@@ -19,7 +20,7 @@ const STEP_MS = 450;
 const HISTORY_MAX = 50;
 const TOAST_MS = 2000;
 // 設定（判定表 第14回）：エフェクト、置く前に知らせる
-const DEFAULT_SETTINGS = { fx: true, preview: true };
+const DEFAULT_SETTINGS = { fx: true, preview: true, deco: true };
 
 const $ = (id) => document.getElementById(id);
 const svg = $('board');
@@ -131,8 +132,12 @@ function glow() {
   return glowMemo.cell?.key ?? null;
 }
 
+// 島の飾り：取った実績のうち、今いる島の飾り（箱庭だけ。問題とスコアアタックの盤には出さない）
+const decorations = () => (pz || sa || !state.settings.deco ? []
+  : state.achieved.filter((id) => DECO_DRAW[id] && (DECO_ISLAND[id] ?? 1) === state.island));
 function render(marks = {}) {
-  drawBoard(svg, viewBoard(), busy || sa ? marks : pz ? { ...marks, hint: answerHint() } : { ...marks, hint: glow() });
+  const deco = decorations();
+  drawBoard(svg, viewBoard(), busy || sa ? { ...marks, deco } : pz ? { ...marks, hint: answerHint() } : { ...marks, hint: glow(), deco });
   renderCount();
   renderMode();
 }
@@ -296,7 +301,8 @@ function renderAchievements() {
       li.innerHTML = `<span class="ach-mark">${done ? '★' : '☆'}</span><div>
         <b>${secret ? '？？？' : a.name}</b>
         <p>${secret ? a.teaser : a.text}</p>
-        <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`;
+        <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`
+        + (done && decoSvg(a.id) ? `<img class="ach-deco" src="data:image/svg+xml;utf8,${encodeURIComponent(decoSvg(a.id, 40))}" width="40" height="40" alt="">` : '');
       return li;
     }));
     const sec = document.createElement('section');
@@ -987,10 +993,12 @@ for (const b of document.querySelectorAll('.tab[data-tab]')) b.addEventListener(
 $('open-help').addEventListener('click', () => {
   $('set-fx').checked = state.settings.fx;
   $('set-preview').checked = state.settings.preview;
+  $('set-deco').checked = state.settings.deco;
   $('help').showModal();
 });
 $('set-fx').addEventListener('change', (e) => { state.settings = { ...state.settings, fx: e.target.checked }; save(); });
 $('set-preview').addEventListener('change', (e) => { state.settings = { ...state.settings, preview: e.target.checked }; save(); showPreview(null); });
+$('set-deco').addEventListener('change', (e) => { state.settings = { ...state.settings, deco: e.target.checked }; save(); render(); });
 $('reset').addEventListener('click', () => {
   if (!confirm('図鑑も島も全部消して最初から？（元に戻せない）')) return;
   state = fresh();

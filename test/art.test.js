@@ -33,3 +33,17 @@ test('上に乗る物（木・花・岩・巣・薪・種・炎）にも絵が�
     assert.ok(objectSvg(kind).startsWith('<svg xmlns='));
   }
 });
+
+// 島の飾り（実績のごほうび）：「島の飾り」の実績には全部絵があり、物なので顔（目の光）は描かない
+import { DECO_DRAW, decoSvg } from '../src/art/decorations.js';
+import { ACHIEVEMENTS } from '../src/core/achievements.js';
+test('島の飾りの実績には全部絵があり、顔は描かない', () => {
+  const ids = ACHIEVEMENTS.filter((a) => a.reward.startsWith('島の飾り')).map((a) => a.id);
+  assert.deepEqual(Object.keys(DECO_DRAW).sort(), ids.sort());
+  for (const id of ids) {
+    const g = DECO_DRAW[id]();
+    assert.equal(g.n, 32);
+    assert.ok(g.px.flat().includes('#1d1a33'), id + ' の縁取り');
+    assert.ok(decoSvg(id).startsWith('<svg xmlns='));
+  }
+});
