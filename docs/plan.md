@@ -19,6 +19,7 @@
 | 2026-11-27 | 第11回 工程7：生き物の絵の見本 https://claude.ai/artifact/V7vQhsZrFKHGbGrUwS7yXy | 6匹と W1〜W6 全部 OK（この方向で残り18匹を一度に、上に乗る物もドット絵、首かしげの演出、絵のあとに画面の採点）→ 0.12.0 |
 | 2026-11-27 | 第12回 工程7：残り18匹と上に乗る物の絵 https://claude.ai/artifact/RGT4LhhXCPx8Em4QyFk6fp | 18匹・X2（首かしげ）・X3（次は UI の採点）OK。X1 は岩だけ直す（地面についていなそうに見える）→ 0.12.1 |
 | 2026-11-27 | 第13回 工程7：画面の採点（game-ui）と直す案 https://claude.ai/artifact/H8JQbehiA2aDxkWrB8Kr67 | Y1〜Y5・Y7〜Y10 は案A、Y6（スマホの61マスのマス 36px）は今のまま。全部おすすめどおり → 0.13.0 |
+| 2026-11-27 | 第14回 工程7の追加：エフェクトと置く前の知らせ https://claude.ai/artifact/SkCedctLd3YDez2oK3FcAb | Z1〜Z7 全部 OK（0.14.0 のまま） |
 
 ## 作るときの決めごと
 
