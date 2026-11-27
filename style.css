@@ -34,7 +34,9 @@ body {
   gap: 8px;
 }
 
-.topbar { display: flex; align-items: baseline; justify-content: space-between; }
+.topbar { display: flex; align-items: center; justify-content: space-between; }
+/* 題名と、その下の称号のリボン（場所はいつも取っておく） */
+.brand { display: flex; flex-direction: column; gap: 2px; min-height: 52px; justify-content: center; }
 h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .count { margin: 0; color: var(--quiet); }
 .count span:first-child { color: var(--ink); font-weight: 700; font-size: 1.2rem; }
@@ -305,3 +307,35 @@ html { scrollbar-gutter: stable; }
 .deco { pointer-events: none; }
 .ach li { position: relative; }
 .ach .ach-deco { flex: none; margin-left: auto; image-rendering: pixelated; }
+/* 称号のリボン（1.1.0 のあと）。色は実績の種類 */
+.title-badge { align-self: flex-start; display: inline-flex; align-items: center; height: 20px; padding: 0 14px; font-size: 0.75rem; font-weight: 700; color: #1a1e27;
+  background: var(--tone, #e0b85a); clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 50%, 100% 100%, 0 100%, 7px 50%); letter-spacing: 0.04em; }
+.title-badge[data-tone="book"] { --tone: linear-gradient(#ffe7a0, #e0b85a); }
+.title-badge[data-tone="chain"] { --tone: linear-gradient(#c4d6ff, #7fa8ff); }
+.title-badge[data-tone="isle"] { --tone: linear-gradient(#bfe8a8, #7cc96a); }
+.title-badge[data-tone="play"] { --tone: linear-gradient(#ffd6e6, #f3a6c8); }
+.title-badge[data-tone="odd"] { --tone: linear-gradient(#e6d8ff, #b08cf0); }
+.title-badge[hidden] { display: inline-flex !important; visibility: hidden; }
+.ach-wear { flex: none; align-self: center; min-height: 36px; padding: 0 10px; font-size: 0.8rem; }
+.ach-wear[aria-pressed="true"] { border-color: var(--accent) !important; color: var(--accent); }
+/* 図鑑の枠（1.1.0 のあと）：銅・銀・金・虹。図鑑のふちと四すみの飾り */
+#book[data-frame]:not([data-frame=""]) { border-width: 4px; border-style: solid; outline: 2px solid rgb(0 0 0 / 0.5); outline-offset: -8px; }
+#book[data-frame="half"] { border-color: #c27a42; box-shadow: inset 0 0 0 2px #e8a872; }
+#book[data-frame="rumors"] { border-color: #b8c2cc; box-shadow: inset 0 0 0 2px #eef3f8; }
+#book[data-frame="all"] { border-color: #e0b030; box-shadow: inset 0 0 0 2px #fff0a8; }
+#book[data-frame="puzzleAll"] { border-color: transparent; background:
+  linear-gradient(var(--panel), var(--panel)) padding-box,
+  linear-gradient(135deg, #ff6b6b, #ffe066, #6fd18a, #6aa8ff, #b07cff, #ff6b6b) border-box; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35); }
+#book[data-frame]:not([data-frame=""])::before, #book[data-frame]:not([data-frame=""])::after {
+  content: ""; position: absolute; width: 14px; height: 14px; top: 6px; transform: rotate(45deg); background: var(--gem, #e0b030); box-shadow: 0 0 0 2px #1d1a33; pointer-events: none; }
+#book[data-frame]:not([data-frame=""])::before { left: 6px; }
+#book[data-frame]:not([data-frame=""])::after { right: 6px; }
+#book[data-frame="half"] { --gem: #e8a872; }
+#book[data-frame="rumors"] { --gem: #eef3f8; }
+#book[data-frame="all"] { --gem: #ffe066; }
+#book[data-frame="puzzleAll"] { --gem: conic-gradient(#ff6b6b, #ffe066, #6fd18a, #6aa8ff, #b07cff, #ff6b6b); }
+.frame-chip { flex: none; width: 18px; height: 18px; margin-top: 2px; border-radius: 4px; border: 3px solid #e0b030; }
+.frame-chip.frame-half { border-color: #c27a42; }
+.frame-chip.frame-rumors { border-color: #b8c2cc; }
+.frame-chip.frame-all { border-color: #e0b030; }
+.frame-chip.frame-puzzleAll { border-color: transparent; background: linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(135deg, #ff6b6b, #ffe066, #6fd18a, #6aa8ff, #b07cff) border-box; }

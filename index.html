@@ -9,7 +9,10 @@
 <body>
 <main id="app" data-ui="app">
   <header class="topbar" data-ui="topbar">
-    <h1>Mythic Mosaic</h1>
+    <div class="brand">
+      <h1>Mythic Mosaic</h1>
+      <span id="title-badge" class="title-badge" data-ui="title" hidden></span>
+    </div>
     <button type="button" id="cross" class="cross" data-act="cross" hidden>火の山の島へ</button>
     <p class="count"><span id="found-count">0</span> / <span id="found-total">24</span> 匹</p>
   </header>
@@ -67,7 +70,7 @@
     <p id="book-note" class="book-note"></p>
     <div id="book-list" class="book book-wrap" data-ui="book"></div>
     <div id="ach-panel" hidden>
-      <p class="book-note">取った実績 <span id="ach-count"></span>（島の飾りは、取るとその島のすみに飾られる。称号と図鑑の枠の見た目はこれから）</p>
+      <p class="book-note">取った実績 <span id="ach-count"></span>。島の飾りは、取るとその島のすみに飾られる。称号と図鑑の枠は「つける」で選ぶ（称号は題名の下、枠は図鑑のふち）</p>
       <div id="ach-list" class="ach-groups"></div>
     </div>
   </div>
@@ -104,7 +107,7 @@
     <li>生き物を見つけると、まだの生き物の噂を話す。噂は図鑑にも残り、形に使う物も分かる。</li>
     <li>新しい生き物がしばらく出ないと、使う物が分かっている生き物が1手で現れる所が、島の上でほんのり光る。</li>
     <li>「置く前に知らせる」が入っていると、マスにマウスを乗せる（スマホは長押し）だけで、置いたときに最初に出る生き物が分かる。まだ見つけていない生き物は「？？？」。連鎖問題では出ない。</li>
-    <li>図鑑の「実績」で、取った実績を見られる。ごほうびの「島の飾り」は、取るとその島のすみに飾られる（設定で切れる）。</li>
+    <li>図鑑の「実績」で、取った実績を見られる。ごほうびの「島の飾り」は、取るとその島のすみに飾られる（設定で切れる）。「称号」と「図鑑の枠」は、取った物から1つずつ「つける」で選ぶ（称号は題名の下に、枠は図鑑のふちに出る）。</li>
   </ol>
   </section>
   <section class="help-col">

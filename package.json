@@ -1,6 +1,6 @@
 {
   "name": "mythic-mosaic",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "六角の箱庭に地形を敷き、幻の生き物を呼んで連鎖させる一人用パズル",

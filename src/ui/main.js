@@ -45,7 +45,7 @@ const TEST_OPEN = new URLSearchParams(location.search).get('test') === 'open';
 
 // island＝今いる島（1＝はじまりの島、2＝火の山の島。判定表 第15回）。board＝今いる島の盤、away＝もう片方の島の盤（まだ渡っていなければ null）
 function fresh() {
-  return { format: SAVE_FORMAT, found: [], board: createBoard(0), island: 1, away: null, selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, bestRun: {}, settings: { ...DEFAULT_SETTINGS } };
+  return { format: SAVE_FORMAT, found: [], board: createBoard(0), island: 1, away: null, selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, bestRun: {}, title: null, frame: null, settings: { ...DEFAULT_SETTINGS } };
 }
 
 // その島の広さの段（はじまりの島は図鑑の数、火の山の島は火の山の生き物の数で広がる）
@@ -60,7 +60,7 @@ function load() {
     if (s?.format !== SAVE_FORMAT || !s.board?.cells) return null;
     // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が、0.6.1 までには解いた問題が、0.8.1 までにはスコアの記録が無い
     // 0.14.0 までの保存には島が1つしかない
-    return { achieved: [], dry: 0, cleared: [], best: {}, bestRun: {}, island: 1, away: null, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
+    return { achieved: [], dry: 0, cleared: [], best: {}, bestRun: {}, title: null, frame: null, island: 1, away: null, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
   } catch {
     return null;
   }
@@ -303,6 +303,20 @@ function renderAchievements() {
         <p>${secret ? a.teaser : a.text}</p>
         <p class="reward">${secret ? '' : `ごほうび：${a.reward}`}${a.later ? `（${a.later}で遊べるようになる）` : ''}</p></div>`
         + (done && decoSvg(a.id) ? `<img class="ach-deco" src="data:image/svg+xml;utf8,${encodeURIComponent(decoSvg(a.id, 40))}" width="40" height="40" alt="">` : '');
+      // 称号と図鑑の枠は、取った物から1つずつつける（1.1.0 のあとの人の頼み）
+      const slot = a.reward === '称号' ? 'title' : a.reward.startsWith('図鑑の枠') ? 'frame' : null;
+      if (done && slot) {
+        const on = state[slot] === a.id;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'ach-wear';
+        b.dataset.act = `wear-${slot}`;
+        b.setAttribute('aria-pressed', String(on));
+        b.textContent = on ? 'つけている' : 'つける';
+        b.addEventListener('click', () => { state[slot] = on ? null : a.id; save(); renderWear(); renderAchievements(); });
+        li.append(b);
+      }
+      if (done && slot === 'frame') li.prepend(Object.assign(document.createElement('span'), { className: `frame-chip frame-${a.id}` }));
       return li;
     }));
     const sec = document.createElement('section');
@@ -310,6 +324,17 @@ function renderAchievements() {
     sec.append(h, ol);
     return sec;
   }));
+}
+
+// つけている称号（題名の下のリボン。色は実績の種類）と図鑑の枠
+const KIND_TONE = { '図鑑': 'book', '図鑑（組）': 'book', '連鎖': 'chain', '島': 'isle', '問題とスコア': 'play', 'ふしぎ': 'odd' };
+function renderWear() {
+  const t = ACHIEVEMENTS.find((a) => a.id === state.title && state.achieved.includes(a.id));
+  $('title-badge').hidden = !t;
+  $('title-badge').textContent = t ? t.name : '';
+  $('title-badge').dataset.tone = t ? KIND_TONE[t.kind] ?? 'book' : '';
+  const f = state.frame && state.achieved.includes(state.frame) ? state.frame : '';
+  $('book').dataset.frame = f;
 }
 
 // 図鑑と一覧の生き物の印：絵があれば絵、なければ色の丸と番号
@@ -1002,6 +1027,7 @@ $('set-deco').addEventListener('change', (e) => { state.settings = { ...state.se
 $('reset').addEventListener('click', () => {
   if (!confirm('図鑑も島も全部消して最初から？（元に戻せない）')) return;
   state = fresh();
+  renderWear();
   history = [];
   toastQueue.length = 0;
   save();
@@ -1035,6 +1061,7 @@ for (const d of document.querySelectorAll('dialog')) {
 }
 
 $('version').textContent = APP_VERSION;
+renderWear();
 checkAchievements({}); // 前の記録からも、図鑑と島の実績はさかのぼって取れる（K3）
 save();
 render();
