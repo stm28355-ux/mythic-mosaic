@@ -9,6 +9,8 @@
   --water: #4a86c5;
   --sand: #d2b77e;
   --marsh: #4f7d6a;
+  --ash: #9b949a;
+  --lava: #d8572a;
   --line: #1a1e27;
 }
 
@@ -67,6 +69,8 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .top.g-water { fill: var(--water); }
 .top.g-sand { fill: var(--sand); }
 .top.g-marsh { fill: var(--marsh); }
+.top.g-ash { fill: var(--ash); }
+.top.g-lava { fill: var(--lava); }
 .top.h1 { filter: brightness(1.12); }
 .top.h2 { filter: brightness(1.25); }
 .side { fill: #11141b; opacity: 0.55; }
@@ -108,11 +112,22 @@ h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.04em; }
 .i-hill .swatch { background: linear-gradient(#e8e2d6, #8d8579); }
 .i-rock .swatch { background: #8e8a84; clip-path: polygon(10% 85%, 20% 35%, 45% 8%, 80% 15%, 100% 55%, 92% 88%); }
 .i-nest .swatch { background: #9a6b3e; clip-path: ellipse(50% 32% at 50% 62%); }
+.i-ash .swatch { background: var(--ash); }
+.i-lava .swatch { background: radial-gradient(circle at 40% 40%, #ffc04a, var(--lava) 70%); }
+.i-valley .swatch { background: linear-gradient(#5a5348, #c9c1b3); }
+.i-firewood .swatch { background: #9a6b3e; clip-path: polygon(0 35%, 100% 35%, 100% 65%, 0 65%); }
+.i-seed .swatch { background: #b07a46; clip-path: ellipse(32% 45% at 50% 55%); }
 .i-release .swatch { clip-path: none; width: auto; height: 22px; line-height: 22px; font-size: 1.1rem; }
 .i-release .swatch::before { content: "↩"; }
 .lock { font-size: 0.7rem; color: var(--quiet); }
 
 .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+/* 島を渡る（上の帯。判定表 第15回 K2） */
+.cross { margin-left: auto; margin-right: 10px; min-height: 36px; padding: 0 12px; border: 1px solid #c96a3a; border-radius: 18px; background: rgb(201 106 58 / 0.18); color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer; }
+body[data-island="2"] .cross { border-color: #6f9a5a; background: rgb(111 154 90 / 0.18); }
+/* 火の山の島：荒れ地は黒っぽい岩、背景は少し赤い */
+body[data-island="2"] { background: #2a2226; }
+body[data-island="2"] .top.g-barren { fill: #4e4246; }
 .tools button, dialog button {
   min-height: 44px; border: 1px solid var(--quiet); border-radius: 8px;
   background: transparent; color: var(--ink); font: inherit; cursor: pointer;

@@ -192,8 +192,9 @@ test('生き物のデータの形がそろっている', () => {
     assert.ok(sp.name && sp.text && sp.center && (sp.around || sp.line) && (sp.effect || sp.effects));
     assert.ok(sp.hint);
   }
-  assert.equal(CREATURES.length, 24);
-  assert.deepEqual(CREATURES.map((c) => c.no), Array.from({ length: 24 }, (_, i) => i + 1));
+  // 第1の島24匹＋第2の島の試作6匹（判定表 第16回）
+  assert.equal(CREATURES.length, 30);
+  assert.deepEqual(CREATURES.map((c) => c.no), Array.from({ length: 30 }, (_, i) => i + 1));
 });
 
 test('帰す：生き物だけがいなくなり、地面・木・高さは残り、連鎖は起こさない（#1）', () => {

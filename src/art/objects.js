@@ -7,6 +7,10 @@ const O = {
   petal: '#ff8fb4', petalLight: '#ffc6da', center: '#ffe07a', stem: '#3f9a4f', petal2: '#fff0f6', petal3: '#c9a7ff',
   rock: '#9a958e', rockLight: '#c4bfb7', rockDark: '#6d6862', shadow: '#1d1a3366',
   nest: '#9a6b3e', nestLight: '#c08e5c', nestDark: '#6f4a2a', egg: '#f5efe0', eggSpot: '#b9ad94',
+  // 第2の島：薪・種・炎
+  log: '#9a6b3e', logLight: '#c08e5c', logDark: '#6f4a2a', ring: '#e8c89a', ringDark: '#b08a5a',
+  seed: '#b07a46', seedLight: '#d8a56c', soil: '#7a5a42', soilLight: '#9a7658', sprout: '#6fc25a',
+  flame: '#ff8a3c', flameLight: '#ffd35c', flameCore: '#fff3b0', flameDeep: '#e0502c', charred: '#4f4a56',
 };
 
 const flower = (g, x, y, c) => g
@@ -53,6 +57,30 @@ export const OBJECT_DRAW = {
     .ellipse(16, 23, 13, 6, O.nest).ellipse(16, 20, 10, 2, O.nestDark)
     .line(5, 22, 12, 25, O.nestLight).line(13, 26, 22, 23, O.nestLight).line(19, 27, 27, 24, O.nestLight).line(8, 27, 14, 28, O.nestDark)
     .ellipse(13, 18, 3, 2.5, O.egg).ellipse(19, 17.5, 3, 3, O.egg)
+    .outline(INK),
+  // 薪：3本積んだ丸太。切り口に年輪
+  firewood: () => {
+    const g = grid();
+    const log = (x0, x1, y) => g.rect(x0, y - 3, x1, y + 3, O.log).line(x0, y - 2, x1, y - 2, O.logLight).line(x0, y + 2, x1, y + 2, O.logDark)
+      .ellipse(x1, y, 2.5, 3.5, O.ring).ellipse(x1, y, 1, 1.5, O.ringDark);
+    log(4, 14, 24); log(14, 26, 24); log(9, 20, 17);
+    return g.outline(INK);
+  },
+  // 種：盛った土の上に、まいた大きな種が3つ
+  seed: () => grid()
+    .ellipse(16, 25, 13, 5, O.soil).ellipse(12, 23, 5, 1.5, O.soilLight)
+    .ellipse(8, 20, 2.3, 3, O.seed).ellipse(16, 17, 2.5, 3.5, O.seed).ellipse(24, 20, 2.3, 3, O.seed)
+    .px1(7, 19, O.seedLight).px1(15, 15, O.seedLight).px1(23, 19, O.seedLight)
+    .line(16, 13, 16, 11, O.sprout).px1(15, 10, O.sprout).px1(17, 10, O.sprout)
+    .outline(INK),
+  // 炎：燃える薪。黒くこげた丸太の上に、大きな炎
+  fire: () => grid()
+    .rect(5, 25, 27, 28, O.charred).line(5, 26, 27, 26, O.logDark).ellipse(27, 26.5, 2, 2, O.ringDark)
+    .poly([[16, 2], [21, 9], [25, 17], [24, 25], [8, 25], [7, 17], [11, 9]], O.flame)
+    .poly([[8, 9], [10, 15], [6, 17]], O.flame).poly([[25, 7], [26, 15], [22, 13]], O.flame)
+    .tint(6, 22, 26, 25, O.flameDeep, O.flame)
+    .poly([[16, 9], [20, 16], [21, 24], [11, 24], [12, 16]], O.flameLight)
+    .poly([[16, 15], [18, 20], [18, 24], [14, 24], [14, 20]], O.flameCore)
     .outline(INK),
 };
 

@@ -27,6 +27,9 @@ export const GROUNDS = Object.freeze({
   water: { name: '水' },
   sand: { name: '砂' },
   marsh: { name: '湿地' },
+  // 第2の島（判定表 第16回）
+  ash: { name: '灰' },
+  lava: { name: '溶岩' },
 });
 
 export const OBJECTS = Object.freeze({
@@ -34,18 +37,30 @@ export const OBJECTS = Object.freeze({
   flower: { name: '花' },
   rock: { name: '岩' },
   nest: { name: '巣' },
+  // 第2の島（判定表 第16回）：薪と種は手で置く。炎は生き物だけが出す（第15回 K3）
+  firewood: { name: '薪' },
+  seed: { name: '種' },
+  fire: { name: '炎' },
 });
 
 export const MAX_HEIGHT = 2;
 
-// 人が置ける物（R6）。unlockAt＝見つけた生き物の数がこれ以上で使える、unlockBy＝その生き物を見つけたら使える
+// 人が置ける物（R6）。unlockAt＝見つけた生き物の数がこれ以上で使える、unlockBy＝その生き物を見つけたら使える、
+// unlock2＝第2の島の生き物をこの数見つけたら使える、islands＝置ける島（書かなければどちらでも。第16回 案②：島ごとに8つ）
 export const PLACEABLES = Object.freeze([
   { id: 'grass', name: '草', kind: 'ground', ground: 'grass', unlockAt: 0 },
-  { id: 'water', name: '水', kind: 'ground', ground: 'water', unlockAt: 0 },
-  { id: 'sand', name: '砂', kind: 'ground', ground: 'sand', unlockAt: 0 },
+  { id: 'water', name: '水', kind: 'ground', ground: 'water', unlockAt: 0, islands: [1] },
+  { id: 'sand', name: '砂', kind: 'ground', ground: 'sand', unlockAt: 0, islands: [1] },
   { id: 'hill', name: '丘', kind: 'raise', unlockAt: 3 },
-  { id: 'rock', name: '岩', kind: 'object', object: 'rock', unlockAt: 8 },
-  { id: 'nest', name: '巣', kind: 'object', object: 'nest', unlockBy: 'mofuroo' },
+  // 谷：高さを1下げる。第2の島で開くと、第1の島でも使える（第16回 I5）
+  { id: 'valley', name: '谷', kind: 'lower', unlock2: 3 },
+  { id: 'rock', name: '岩', kind: 'object', object: 'rock', unlockAt: 8, islands: [1] },
+  { id: 'nest', name: '巣', kind: 'object', object: 'nest', unlockBy: 'mofuroo', islands: [1] },
+  // 第2の島の物（島を渡れる図鑑20匹で開く。種は第2の島の生き物5匹）
+  { id: 'ash', name: '灰', kind: 'ground', ground: 'ash', unlockAt: 20, islands: [2] },
+  { id: 'lava', name: '溶岩', kind: 'ground', ground: 'lava', unlockAt: 20, islands: [2] },
+  { id: 'firewood', name: '薪', kind: 'object', object: 'firewood', unlockAt: 20, islands: [2] },
+  { id: 'seed', name: '種', kind: 'object', object: 'seed', unlock2: 5, islands: [2] },
   // 帰す（Issue #1）：生き物を島から帰す。地面・木・高さはそのまま、連鎖は起こさない、図鑑には残る
   { id: 'release', name: '帰す', kind: 'release', unlockAt: 0 },
 ]);
@@ -55,6 +70,17 @@ export const ISLAND_UNLOCKS = Object.freeze([
   { stage: 1, unlockAt: 3 },
   { stage: 2, unlockAt: 10 },
 ]);
+
+// 2つの島（判定表 第15回・第16回）。items＝その島の置く物の並び（8つ）、late＝その島でだけ遅れて開く物（第2の島の生き物の数）、
+// openAt＝渡れるようになる図鑑の数、unlocks＝第2の島が広がる節目（第2の島の生き物の数）
+export const ISLANDS = Object.freeze({
+  1: Object.freeze({ name: 'はじまりの島', items: ['grass', 'water', 'sand', 'hill', 'valley', 'rock', 'nest', 'release'] }),
+  2: Object.freeze({
+    name: '火の山の島', items: ['grass', 'ash', 'lava', 'hill', 'valley', 'firewood', 'seed', 'release'],
+    late: { hill: 3 }, openAt: 20,
+    unlocks: [{ stage: 1, unlock2: 3 }, { stage: 2, unlock2: 6 }],
+  }),
+});
 
 const ANY = { creature: 'any' };
 
@@ -285,5 +311,58 @@ export const CREATURES = Object.freeze([
     text: '隣の生き物をすべて帰し、2マス先までの荒れ地を花の咲いた草にする',
     hint: '六匹に囲まれた荒れ地に、すべての始まりが眠る',
     rumor: { by: ['nijidori', 'kirinonushi'], text: '6匹に囲まれた荒れ地。最後のひと押しは、丘' },
+  },
+
+  // ---- 第2の島「火の山の島」の試作6匹（判定表 第16回。噂はまだ無い＝使う物を最初から見せる）----
+  {
+    id: 'hinoko', no: 25, name: 'ヒノコ', title: '火の子', group: '火の山', island: 2,
+    center: { ground: 'lava' },
+    around: { match: { object: 'firewood' }, min: 1 },
+    effect: { kind: 'grow', range: 1, from: { object: 'firewood' }, object: 'fire' },
+    text: '隣の薪すべてに火をつける（炎にする）',
+    hint: '熱い所のそばに、燃える物があると',
+  },
+  {
+    id: 'haimogura', no: 26, name: 'ハイモグラ', title: '灰の子', group: '火の山', island: 2,
+    center: { ground: 'ash', object: null, height: 0 },
+    around: { match: { ground: 'ash' }, min: 3 },
+    effect: { kind: 'convert', range: 1, from: { ground: 'ash' }, to: 'grass' },
+    text: '隣の灰をすべて草にする（灰は肥やし）',
+    hint: '灰がたっぷり積もった所にもぐる',
+  },
+  {
+    id: 'tsukisusu', no: 27, name: 'ツキスス', title: '突進の子', group: '火の山', island: 2,
+    center: { ground: 'ash', minHeight: 1 },
+    around: { match: ANY, min: 2 },
+    effect: { kind: 'push', range: 1, from: ANY },
+    text: '隣の生き物を、反対側へ1マス押す（島の外なら帰る）',
+    hint: '高い灰の上で、にぎやかな所に突っこむ',
+  },
+  {
+    id: 'tanebouzu', no: 28, name: 'タネボウズ', title: '種の子', group: '火の山', island: 2,
+    center: { ground: 'ash', object: 'seed' },
+    around: { match: { ground: 'grass' }, min: 2 },
+    effect: { kind: 'grow', range: 1, from: { ground: 'grass' }, object: 'flower' },
+    text: '隣の草すべてに花を咲かせる',
+    hint: '灰にまいた種が、草に囲まれると',
+  },
+  {
+    id: 'fuigo', no: 29, name: 'フイゴ', title: 'ふいごの風', group: '火の山', island: 2,
+    center: { object: 'fire' },
+    around: [{ match: ANY, min: 1 }, { match: { object: 'firewood' }, min: 2 }],
+    effects: [
+      { kind: 'push', range: 1, from: ANY },
+      { kind: 'grow', range: 1, from: { object: 'firewood' }, object: 'fire' },
+    ],
+    text: '隣の生き物を押し、隣の薪に火をつける',
+    hint: '燃える所で、まだ燃えていない物を見ると',
+  },
+  {
+    id: 'homuradori', no: 30, name: 'ホムラドリ', title: '炎の鳥', group: '火の山', island: 2,
+    center: { height: 2 },
+    around: { match: { object: 'fire' }, min: 3 },
+    effect: { kind: 'convert', range: 2, from: { ground: 'ash' }, to: 'grass', object: 'flower' },
+    text: '2マス先までの灰を、花の咲いた草にする',
+    hint: '高い所が炎に囲まれると、翼を広げる',
   },
 ]);

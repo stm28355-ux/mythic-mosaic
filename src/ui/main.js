@@ -1,6 +1,6 @@
 // 箱庭と連鎖問題とスコアアタックの画面（工程2 の試作を、工程4 で24匹に、工程5 で連鎖問題に、工程6 でスコアアタックに広げた）。ルールは src/core/rules.js、描くのは view.js。
-import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked, isOpen } from '../core/rules.js';
-import { CREATURES, PLACEABLES, GROUNDS, OBJECTS } from '../core/creatures.js';
+import { createBoard, growIsland, place, whyNotPlace, recordFound, unlocked, isOpen, isOpenOn, island2Stage, island2Count, canCross } from '../core/rules.js';
+import { CREATURES, PLACEABLES, GROUNDS, OBJECTS, ISLANDS } from '../core/creatures.js';
 import { parseKey, distance } from '../core/hex.js';
 import { hintLevel, usesOf, usesShown, newRumors, glowCell, STUCK_MOVES } from '../core/hints.js';
 import { ACHIEVEMENTS, newAchievements } from '../core/achievements.js';
@@ -42,16 +42,24 @@ const viewBoard = () => (pz ? pz.board : sa ? sa.board : state.board);
 // 試し遊び用：URL に ?test=open を付けると、問題を全部開く（工程9 で外すか決める）
 const TEST_OPEN = new URLSearchParams(location.search).get('test') === 'open';
 
+// island＝今いる島（1＝はじまりの島、2＝火の山の島。判定表 第15回）。board＝今いる島の盤、away＝もう片方の島の盤（まだ渡っていなければ null）
 function fresh() {
-  return { format: SAVE_FORMAT, found: [], board: createBoard(0), selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, settings: { ...DEFAULT_SETTINGS } };
+  return { format: SAVE_FORMAT, found: [], board: createBoard(0), island: 1, away: null, selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, settings: { ...DEFAULT_SETTINGS } };
 }
+
+// その島の広さの段（はじまりの島は図鑑の数、火の山の島は火の山の生き物の数で広がる）
+const stageOf = (island) => (island === 2 ? island2Stage(state.found) : unlocked(state.found).stage);
+// 試し遊び（?test=open）では、火の山の島へ渡れて、火の山の島の置く物も全部開く
+const foundHere = () => (TEST_OPEN && state.island === 2 ? Infinity : state.found);
+const mayCross = () => TEST_OPEN || canCross(state.found);
 
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s?.format !== SAVE_FORMAT || !s.board?.cells) return null;
     // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が、0.6.1 までには解いた問題が、0.8.1 までにはスコアの記録が無い
-    return { achieved: [], dry: 0, cleared: [], best: {}, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
+    // 0.14.0 までの保存には島が1つしかない
+    return { achieved: [], dry: 0, cleared: [], best: {}, island: 1, away: null, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
   } catch {
     return null;
   }
@@ -75,7 +83,7 @@ function say(lines) {
 // 置く物の並び。スコアアタックでは地図の置ける物だけを、残りの数と一緒に出す
 function renderPalette() {
   const left = sa ? stockLeft(sa.m, sa.moves) : null;
-  const items = sa ? PLACEABLES.filter((p) => p.id in sa.m.stock) : PLACEABLES;
+  const items = sa ? PLACEABLES.filter((p) => p.id in sa.m.stock) : ISLANDS[state.island].items.map((id) => PLACEABLES.find((p) => p.id === id));
   const selected = sa ? sa.selected : state.selected;
   palette.replaceChildren(...items.map((item) => {
     const b = document.createElement('button');
@@ -83,7 +91,7 @@ function renderPalette() {
     b.className = `item i-${item.id}`;
     b.dataset.act = 'item';
     b.dataset.item = item.id;
-    const open = sa ? left[item.id] > 0 : isOpen(item, state.found);
+    const open = sa ? left[item.id] > 0 : isOpenOn(item, foundHere(), state.island);
     b.disabled = !open;
     b.setAttribute('aria-pressed', String(selected === item.id));
     b.innerHTML = `<span class="swatch"></span><span class="label">${item.name}</span>`
@@ -97,7 +105,11 @@ function renderPalette() {
 }
 
 function lockText(item) {
-  return item.unlockBy ? '？？？で開く' : `${item.unlockAt}匹で開く`;
+  if (item.unlockBy) return '？？？で開く';
+  const late = state.island === 2 ? ISLANDS[2].late[item.id] : undefined;
+  const n2 = item.unlock2 ?? (isOpen(item, state.found) ? late : undefined);
+  if (n2 !== undefined) return state.found.length < ISLANDS[2].openAt ? '火の山の島で開く' : `火の山の${n2}匹で開く`;
+  return `${item.unlockAt}匹で開く`;
 }
 
 function renderCount() {
@@ -132,6 +144,11 @@ function renderMode() {
   $('puzzle-cast').hidden = !(pz || sa);
   $('clear').textContent = pz || sa ? 'やり直す' : '更地にする';
   $('open-puzzles').textContent = pz || sa ? '箱庭へ' : '挑戦';
+  // 島を渡る（図鑑20匹から。判定表 第15回 K2）。問題とスコアアタックの間は出さない
+  $('cross').hidden = Boolean(pz || sa) || !mayCross();
+  $('cross').textContent = `⇄ ${ISLANDS[state.island === 2 ? 1 : 2].name}へ`;
+  $('cross').title = `今は${ISLANDS[state.island].name}。押すと渡る（盤はそれぞれ残る）`;
+  document.body.dataset.island = String(pz || sa ? 1 : state.island);
   if (sa) { renderScoreBar(); renderScoreCast(); }
   if (!pz) return;
   const p = pz.p;
@@ -308,9 +325,14 @@ function shapeText(c) {
 function stepLine(st, i) {
   const names = countNames(st.spawned);
   const newIds = [...new Set(st.spawned.map((s) => s.id))].filter((id) => !state.found.includes(id));
-  const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature);
+  // 押されて動いた生き物は「帰った」に数えない。島の外へ押された生き物は帰る（第2の島）
+  const movedFrom = new Set((st.moved ?? []).map((m) => m.from));
+  const out = new Set((st.pushedOut ?? []).map((m) => m.from));
+  const gone = Object.keys(st.board.cells).filter((c) => st.spawnedBoard.cells[c].creature && !st.board.cells[c].creature && !movedFrom.has(c) && !out.has(c));
   return `${i + 1}段目：${names} が現れた${newIds.length ? '（はじめて！）' : ''}`
-    + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : '');
+    + (gone.length ? `（${goneNames(st.spawnedBoard, gone)}が帰っていった）` : '')
+    + (movedFrom.size ? `（${goneNames(st.spawnedBoard, [...movedFrom])}が押されて動いた）` : '')
+    + (out.size ? `（${goneNames(st.spawnedBoard, [...out])}が島の外へ押されて帰っていった）` : '');
 }
 const tiltLine = (st, tilt) => `（${countNames(st.spawned.filter((s) => tilt.has(s.key)))}が首をかしげた：頼みがぶつかって、そのマスは変わらなかった）`;
 
@@ -607,8 +629,9 @@ async function onCell(k) {
   if (pz) { await onPuzzleCell(k); return; }
   if (sa) { await onScoreCell(k); return; }
   const [q, r] = parseKey(k);
-  if (!isOpen(PLACEABLES.find((p) => p.id === state.selected), state.found)) state.selected = 'water';
-  const why = whyNotPlace(state.board, q, r, state.selected, state.found);
+  const sel = PLACEABLES.find((p) => p.id === state.selected);
+  if (!ISLANDS[state.island].items.includes(sel.id) || !isOpenOn(sel, foundHere(), state.island)) state.selected = 'grass';
+  const why = whyNotPlace(state.board, q, r, state.selected, foundHere());
   if (why && state.board.cells[k]?.creature) { say(creatureLines(state.board.cells[k].creature)); return; }
   if (why) {
     say([`ここには置けない（${why}）`]);
@@ -616,7 +639,7 @@ async function onCell(k) {
   }
   busy = true;
   const before = state.board;
-  const result = place(state.board, q, r, state.selected, { found: state.found });
+  const result = place(state.board, q, r, state.selected, { found: foundHere() });
   history.push(before);
   if (history.length > HISTORY_MAX) history.shift();
   chainEl.textContent = '';
@@ -643,8 +666,8 @@ async function onCell(k) {
     return `${teller.name}の噂：「${c.rumor.text}」`;
   });
   state.dry = state.found.length > beforeFound.length ? 0 : state.dry + 1;
-  const u = unlocked(state.found);
-  if (u.stage > state.board.stage) state.board = growIsland(state.board, u.stage);
+  const stage = stageOf(state.island);
+  if (stage > state.board.stage) state.board = growIsland(state.board, stage);
   checkAchievements({ steps: result.steps, before });
   if (result.steps.length === 0) lines.push('何も起きなかった');
   if (result.steps.length >= 2) lines.push(`${result.steps.length}連鎖！`);
@@ -672,9 +695,12 @@ function unlockMessages(from, to) {
   for (const item of PLACEABLES) {
     if (!isOpen(item, from) && isOpen(item, to)) out.push(`「${item.name}」が置けるようになった`);
   }
-  const a = unlocked(from).stage;
-  const b = unlocked(to).stage;
-  if (b > a) out.push('島が広がった');
+  for (const [id, n] of Object.entries(ISLANDS[2].late)) {
+    if (island2Count(from) < n && island2Count(to) >= n) out.push(`${ISLANDS[2].name}でも「${PLACEABLES.find((p) => p.id === id).name}」が置けるようになった`);
+  }
+  if (state.island === 1 && unlocked(to).stage > unlocked(from).stage) out.push('島が広がった');
+  if (island2Stage(to) > island2Stage(from)) out.push(`${ISLANDS[2].name}が広がった`);
+  if (!canCross(from) && canCross(to)) out.push(`海の向こうへ渡れるようになった（「${ISLANDS[2].name}へ」を押す）`);
   return out;
 }
 
@@ -684,7 +710,7 @@ function previewText(k) {
   if (!state.settings.preview || busy || pz) return null;
   const board = sa ? sa.board : state.board;
   const itemId = sa ? sa.selected : state.selected;
-  const found = sa ? Infinity : state.found;
+  const found = sa ? Infinity : foundHere();
   const item = PLACEABLES.find((p) => p.id === itemId);
   const c = board.cells[k];
   if (!c || !item) return null;
@@ -763,7 +789,7 @@ $('undo').addEventListener('click', () => {
   }
   if (history.length === 0) return;
   state.board = history.pop();
-  const stage = unlocked(state.found).stage;
+  const stage = stageOf(state.island);
   if (stage > state.board.stage) state.board = growIsland(state.board, stage);
   chainEl.textContent = '';
   say(['1手戻した（図鑑はそのまま）']);
@@ -777,11 +803,32 @@ $('clear').addEventListener('click', () => {
   if (sa) { startScore(sa.m); return; }
   if (!confirm('島を全部荒れ地に戻す？（図鑑はそのまま。1手戻すで元に戻せる）')) return;
   history.push(state.board);
-  state.board = createBoard(unlocked(state.found).stage);
+  state.board = createBoard(stageOf(state.island), state.island);
   chainEl.textContent = '';
   say(['更地にした']);
   save();
   render();
+});
+
+// 島を渡る：今の島の盤はそのまま取っておき、もう片方の島へ。1手戻すは島ごとに消える
+$('cross').addEventListener('click', () => {
+  if (busy || pz || sa || !mayCross()) return;
+  const to = state.island === 2 ? 1 : 2;
+  const here = state.board;
+  state.board = state.away ?? createBoard(stageOf(to), to);
+  state.away = here;
+  state.island = to;
+  const stage = stageOf(to);
+  if (stage > state.board.stage) state.board = growIsland(state.board, stage);
+  if (!ISLANDS[to].items.includes(state.selected)) state.selected = 'grass';
+  history = [];
+  chainEl.textContent = '';
+  say(to === 2
+    ? [`${ISLANDS[2].name}に渡った`, '灰・溶岩・薪・種が置ける。炎は生き物だけが出す。押されて島の外へ出た生き物は帰る']
+    : [`${ISLANDS[1].name}に戻った`]);
+  save();
+  render();
+  renderPalette();
 });
 
 $('puzzle-hint').addEventListener('click', () => {
@@ -831,7 +878,7 @@ window.describeUI = () => {
   const lines = [];
   if (pz) lines.push(`場所：連鎖問題「${pz.p.title}」${pz.p.items.length}手で${pz.p.target}連鎖。${pz.step + 1}手目の置く物：${pz.p.items[pz.step] ?? 'なし'}${pz.done ? '（クリア）' : ''}。ヒント ${pz.hints}`);
   else if (sa) lines.push(`場所：スコアアタック「${sa.m.title}」残り${Object.values(stockLeft(sa.m, sa.moves)).reduce((a, b) => a + b, 0)}手。点 ${sa.moves.reduce((s, m) => s + m.score, 0)}。選んだ物：${sa.selected}`);
-  else lines.push(`場所：箱庭（${cells.length}マス）。選んだ物：${state.selected}`);
+  else lines.push(`場所：箱庭・${ISLANDS[state.island].name}（${cells.length}マス）。選んだ物：${state.selected}`);
   lines.push(`図鑑：${state.found.length}/${CREATURES.length}匹。盤の生き物：${cells.filter((c) => c.creature).length}匹。光る所：${pz ? answerHint() ?? 'なし' : sa ? 'なし' : glow() ?? 'なし'}`);
   lines.push(`押せる物：${[...document.querySelectorAll('[data-act]')].filter((b) => !b.disabled && !b.closest('[hidden]') && !b.closest('dialog:not([open])')).map((b) => b.dataset.item ? `item:${b.dataset.item}` : b.dataset.act).join(' ')}`);
   lines.push(`ログ：${[...log.children].map((p) => p.textContent).join(' / ')}`);

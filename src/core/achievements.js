@@ -1,7 +1,7 @@
 // 実績（判定表 第6回 J1〜J33・K1〜K6）。
 // 判定は「今の手の結果＋今の盤＋図鑑」だけを見る（K2）。長い数え上げはしない。
 // 取った実績は消えない（K1）。ごほうびは見た目だけで、絵は工程7（K6）。
-import { CREATURES, GROUNDS } from './creatures.js';
+import { CREATURES } from './creatures.js';
 import { rumorHeard } from './hints.js';
 import { PUZZLES } from '../data/puzzles.js';
 import { MAPS } from '../data/maps.js';
@@ -52,7 +52,8 @@ export const ACHIEVEMENTS = Object.freeze([
   { id: 'stage1', kind: '島', name: '島が広がる', text: '37マスに広げる', reward: '称号', check: ({ board }) => board.stage >= 1 },
   { id: 'stage2', kind: '島', name: '大きな島', text: '61マスに広げる', reward: '称号', check: ({ board }) => board.stage >= 2 },
   { id: 'grounds', kind: '島', name: '五つの地面', text: '荒れ地・草・水・砂・湿地が島にそろう', reward: '称号',
-    check: ({ board }) => new Set(cellsOf(board).map((c) => c.ground)).size >= Object.keys(GROUNDS).length },
+    // はじまりの島の5つ（火の山の島の灰・溶岩は数えない）
+    check: ({ board }) => { const g = new Set(cellsOf(board).map((c) => c.ground)); return ['barren', 'grass', 'water', 'sand', 'marsh'].every((x) => g.has(x)); } },
   { id: 'nobarren', kind: '島', name: '荒れ地のない島', text: '61マスの島に荒れ地が1つもない', reward: '称号',
     check: ({ board }) => board.stage >= 2 && cellsOf(board).every((c) => c.ground !== 'barren') },
   { id: 'full', kind: '島', name: '満員の島', text: '61マスが全部生き物で埋まる', reward: '称号',

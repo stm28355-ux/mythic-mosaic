@@ -10,7 +10,7 @@
 // - 地面を置くと上に乗る物は消え、高さは残る（R5）。生き物の居るマスには置けない（D9）。
 
 import { key, neighbors, distance, islandCells, DIRS } from './hex.js';
-import { CREATURES, PLACEABLES, ISLAND_UNLOCKS, MAX_HEIGHT } from './creatures.js';
+import { CREATURES, PLACEABLES, ISLAND_UNLOCKS, ISLANDS, MAX_HEIGHT } from './creatures.js';
 
 // 新しく開く所の丘と岩（第2回 F3「所々に岩や丘」）
 export const AREA_FEATURES = Object.freeze({
@@ -18,12 +18,22 @@ export const AREA_FEATURES = Object.freeze({
   2: Object.freeze({ heights: { '4,-4': 2, '3,-1': 1, '2,-4': 1 }, rocks: ['4,-2', '1,-4', '3,-3'] }),
 });
 
+// 第2の島「火の山の島」の丘（岩は置かない。第2の島では岩を使わない）
+export const AREA_FEATURES_2 = Object.freeze({
+  0: Object.freeze({ heights: { '-1,1': 1 }, rocks: [] }),
+  1: Object.freeze({ heights: { '2,-1': 2, '0,-2': 1 }, rocks: [] }),
+  2: Object.freeze({ heights: { '3,-1': 1, '4,-4': 1, '2,-4': 2 }, rocks: [] }),
+});
+const featuresOf = (island) => (island === 2 ? AREA_FEATURES_2 : AREA_FEATURES);
+
 const blank = (q, r) => ({ q, r, ground: 'barren', height: 0, object: null, creature: null });
 
-// 島の段 stage（0＝19マス）の空の箱庭
-export function createBoard(stage = 0) {
+// 島の段 stage（0＝19マス）の空の箱庭。island＝1（はじまりの島）か 2（火の山の島）
+export function createBoard(stage = 0, island = 1) {
   let board = { stage: 0, cells: {} };
-  for (const [q, r] of islandCells(0)) board.cells[key(q, r)] = blank(q, r);
+  if (island === 2) board.island = 2;
+  const f0 = featuresOf(island)[0];
+  for (const [q, r] of islandCells(0)) board.cells[key(q, r)] = { ...blank(q, r), height: f0?.heights[key(q, r)] ?? 0 };
   for (let s = 1; s <= stage; s++) board = growIsland(board, s);
   return board;
 }
@@ -33,13 +43,13 @@ export function growIsland(board, stage) {
   if (stage <= board.stage) return board;
   const cells = { ...board.cells };
   for (let s = board.stage + 1; s <= stage; s++) {
-    const f = AREA_FEATURES[s] ?? { heights: {}, rocks: [] };
+    const f = featuresOf(board.island)[s] ?? { heights: {}, rocks: [] };
     for (const [q, r] of islandCells(s)) {
       const k = key(q, r);
       if (!cells[k]) cells[k] = { ...blank(q, r), height: f.heights[k] ?? 0, object: f.rocks.includes(k) ? 'rock' : null };
     }
   }
-  return { stage, cells };
+  return board.island === 2 ? { stage, island: 2, cells } : { stage, cells };
 }
 
 // マスが条件に合うか
@@ -142,6 +152,7 @@ function runStep(board, changed, used, catalog) {
 
   // 効果の頼みを層ごとに集める（同じ段の中では、生き物が出たあとの盤を見る）
   const requests = new Map(); // "key|layer" -> Set(値)
+  const moves = []; // 押す（判定表 第15回 K4・P1〜P4）：{ from, to（島の外なら null）, id }
   const ask = (k, layer, value) => {
     const id = `${k}|${layer}`;
     if (!requests.has(id)) requests.set(id, new Set());
@@ -166,6 +177,11 @@ function runStep(board, changed, used, catalog) {
         if (fx.kind === 'lower') ask(k, 'height', Math.max(0, x.height - 1));
         if (fx.kind === 'clear') ask(k, 'object', null);
         if (fx.kind === 'release' && x.creature) ask(k, 'creature', null);
+        // 押す：出た生き物から見て、隣の生き物をまっすぐ外へ1マス
+        if (fx.kind === 'push' && x.creature) {
+          const to = key(2 * x.q - c.q, 2 * x.r - c.r);
+          moves.push({ from: k, to: placed.cells[to] ? to : null, id: x.creature });
+        }
       }
       if (fx.kind === 'raise' && fx.withCenter !== false) ask(s.key, 'height', Math.min(MAX_HEIGHT, c.height + 1));
     }
@@ -181,22 +197,57 @@ function runStep(board, changed, used, catalog) {
     cells[k] = { ...cells[k], [layer]: value };
     touched.add(k);
   }
+  // 押すは最後にまとめて当てる。動けない（先に生き物がいる・2匹が同じマスへ・同じ生き物を2方向へ・ほかの効果とぶつかる）なら動かず、ぶつかりに数える。
+  // 島の外へ押された生き物は帰る（P2 の直し）。動いた元と先は「変わった」に数える（P4）
+  const moved = [];
+  const pushedOut = [];
+  const count = (list, f) => list.reduce((m, x) => (f(x) === null ? m : m.set(f(x), (m.get(f(x)) ?? 0) + 1)), new Map());
+  const fromN = count(moves, (m) => m.from);
+  const toN = count(moves, (m) => m.to);
+  for (const m of moves) {
+    const ok = fromN.get(m.from) === 1 && !requests.has(`${m.from}|creature`)
+      && (m.to === null || (toN.get(m.to) === 1 && !cells[m.to].creature && !requests.has(`${m.to}|creature`) && !fromN.has(m.to)));
+    if (!ok) { if (!clashes.some((x) => x.key === m.from && x.layer === 'creature')) clashes.push({ key: m.from, layer: 'creature' }); continue; }
+    cells[m.from] = { ...cells[m.from], creature: null };
+    touched.add(m.from);
+    if (m.to === null) { pushedOut.push({ from: m.from, id: m.id }); continue; }
+    cells[m.to] = { ...cells[m.to], creature: m.id };
+    touched.add(m.to);
+    moved.push({ from: m.from, to: m.to, id: m.id });
+  }
   const changedKeys = [...touched].sort();
   const after = { ...board, cells };
-  // spawnedBoard＝生き物が出た直後（効果の前）、board＝効果を当てた後。画面が段ごとに見せるのに使う
+  // spawnedBoard＝生き物が出た直後（効果の前）、board＝効果を当てた後。画面が段ごとに見せるのに使う。
+  // moved＝押されて動いた生き物、pushedOut＝島の外へ押されて帰った生き物
   return {
     board: after,
-    step: { spawned, blocked, clashes, changed: changedKeys, spawnedBoard: placed, board: after },
+    step: { spawned, blocked, clashes, changed: changedKeys, spawnedBoard: placed, board: after, moved, pushedOut },
   };
 }
+
+// 第2の島の生き物を何匹見つけたか
+const ISLAND2_IDS = new Set(CREATURES.filter((c) => c.island === 2).map((c) => c.id));
+export const island2Count = (found) => (Array.isArray(found) ? found.filter((id) => ISLAND2_IDS.has(id)).length : 0);
 
 // 置く物が開いているか。found は見つけた生き物の id の並び、または数（数のときは生き物で開く物は閉じたまま）
 export function isOpen(item, found = Infinity) {
   if (found === Infinity) return true;
   const n = Array.isArray(found) ? found.length : found;
   if (item.unlockBy) return Array.isArray(found) && found.includes(item.unlockBy);
+  if (item.unlock2 !== undefined) return island2Count(found) >= item.unlock2;
   return n >= (item.unlockAt ?? 0);
 }
+
+// その島で開いているか（第2の島では、丘が第2の島の生き物3匹で開く＝第16回 I5）
+export function isOpenOn(item, found, island = 1) {
+  if (!isOpen(item, found)) return false;
+  const late = island === 2 ? ISLANDS[2].late?.[item.id] : undefined;
+  return late === undefined || found === Infinity || island2Count(found) >= late;
+}
+
+// その島に置ける物か（第16回 案②：島ごとに8つ）。島の無い盤（問題・スコアアタック）は第1の島と同じ
+export const islandOf = (board) => (board.island === 2 ? 2 : 1);
+export const allowedOn = (item, island) => !item.islands || item.islands.includes(island);
 
 // 置けるか。置けないときは理由の文字列、置けるときは null
 export function whyNotPlace(board, q, r, itemId, found = Infinity) {
@@ -204,12 +255,15 @@ export function whyNotPlace(board, q, r, itemId, found = Infinity) {
   if (!c) return '島の外';
   const item = PLACEABLES.find((p) => p.id === itemId);
   if (!item) return '知らない物';
-  if (!isOpen(item, found)) return 'まだ使えない';
+  const island = islandOf(board);
+  if (!allowedOn(item, island)) return 'この島では置けない';
+  if (!isOpenOn(item, found, island)) return 'まだ使えない';
   if (item.kind === 'release') return c.creature ? null : '生き物がいない';
   if (c.creature) return '生き物が住んでいる';
   if (item.kind === 'ground' && c.ground === item.ground && c.object === null) return '同じ地面';
   if (item.kind === 'object' && c.object === item.object) return '同じ物';
   if (item.kind === 'raise' && c.height >= MAX_HEIGHT) return 'これ以上高くできない';
+  if (item.kind === 'lower' && c.height <= 0) return 'これ以上低くできない';
   return null;
 }
 
@@ -230,7 +284,8 @@ export function place(board, q, r, itemId, { catalog = CREATURES, found = Infini
   }
   const next = item.kind === 'ground' ? { ...c, ground: item.ground, object: null }
     : item.kind === 'object' ? { ...c, object: item.object }
-      : { ...c, height: c.height + 1 };
+      : item.kind === 'lower' ? { ...c, height: c.height - 1 }
+        : { ...c, height: c.height + 1 };
   const placedBoard = { ...board, cells: { ...board.cells, [k]: next } };
   let cur = placedBoard;
 
@@ -263,3 +318,10 @@ export function unlocked(found) {
     stage: Math.max(0, ...ISLAND_UNLOCKS.filter((u) => n >= u.unlockAt).map((u) => u.stage)),
   };
 }
+
+// 第2の島の段（第2の島の生き物の数で広がる）と、渡れるか
+export function island2Stage(found) {
+  const n = island2Count(found);
+  return Math.max(0, ...ISLANDS[2].unlocks.filter((u) => n >= u.unlock2).map((u) => u.stage));
+}
+export const canCross = (found) => (Array.isArray(found) ? found.length : found) >= ISLANDS[2].openAt;

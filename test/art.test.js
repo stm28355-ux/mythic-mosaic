@@ -5,7 +5,7 @@ import { DRAW, creatureSvg, hasArt } from '../src/art/creatures.js';
 import { CREATURES, OBJECTS } from '../src/core/creatures.js';
 import { OBJECT_DRAW, objectSvg } from '../src/art/objects.js';
 
-test('24匹全部に絵がある（判定表 第11回：見本6匹のあと18匹）', () => {
+test('30匹全部に絵がある（判定表 第11回：見本6匹のあと18匹。第16回：第2の島の6匹）', () => {
   for (const id of Object.keys(DRAW)) assert.ok(CREATURES.some((c) => c.id === id), id);
   for (const c of CREATURES) assert.ok(hasArt(c.id), c.name);
   assert.equal(hasArt('pocha'), true);
@@ -24,7 +24,7 @@ for (const id of Object.keys(DRAW)) {
   });
 }
 
-test('上に乗る物（木・花・岩・巣）にも絵があり、顔は描かない（W4）', () => {
+test('上に乗る物（木・花・岩・巣・薪・種・炎）にも絵があり、顔は描かない（W4）', () => {
   for (const kind of Object.keys(OBJECTS)) {
     const g = OBJECT_DRAW[kind]();
     assert.equal(g.n, 32);

@@ -2,6 +2,7 @@
 // 企画まとめ：可愛いドット絵32×32、生き物は顔あり。形で見分ける（丸に統一しない）。上に乗る物（木・岩…）には顔を描かない。
 import { grid, toSvg } from './pixel.js';
 import { MORE } from './creatures-more.js';
+import { FIRE } from './creatures-fire.js';
 
 const INK = '#1d1a33';
 const P = {
@@ -85,7 +86,7 @@ export const DRAW = {
     .outline(INK),
 };
 
-Object.assign(DRAW, MORE);
+Object.assign(DRAW, MORE, FIRE);
 
 // 絵のある生き物の SVG（なければ null。絵のない生き物は丸と番号のまま）
 const cache = {};
