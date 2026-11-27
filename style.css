@@ -150,6 +150,8 @@ body[data-island="2"] .top.g-barren { fill: #4e4246; }
 }
 .puzzle-groups { display: grid; gap: 6px; margin-bottom: 12px; }
 .score-totals { display: grid; gap: 4px; }
+/* 手順の書き出し（判定表 第29回 Z7） */
+.steps-text { width: 100%; min-width: min(80vw, 520px); font: inherit; font-size: 0.85rem; line-height: 1.5; background: var(--bg); color: var(--ink); border: 1px solid #444b5a; border-radius: 8px; padding: 8px; }
 .score-line { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 0.9rem; }
 .score-rule { margin: 0; color: var(--quiet); font-size: 0.8rem; }
 .score-num { font-weight: 700; color: var(--accent); }
@@ -197,6 +199,15 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
 .book .rumor { color: var(--accent); }
 .book .uses { color: var(--quiet); }
 .book-note { margin: 0 0 8px; color: var(--quiet); font-size: 0.9rem; }
+/* 図鑑：島ごとのタイルと、選んだ生き物の欄（判定表 第29回 Z3） */
+.book-wrap { display: block; }
+.book-entry { display: flex; gap: 10px; align-items: flex-start; min-height: 132px; padding: 8px; margin-bottom: 8px; border-radius: 10px; background: rgb(255 255 255 / 0.05); }
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.book-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; min-height: 64px; border: 2px solid transparent; border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+.book-tile[aria-pressed="true"] { border-color: var(--accent); }
+.book-tile .book-name { font-size: 0.7rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.book-tile.found .book-name { color: var(--ink); }
+.book-tile:not(.found) .book-name { color: var(--quiet); }
 .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
 .tab { flex: 1; }
 .tab[aria-selected="true"] { border-color: var(--accent) !important; background: rgb(224 184 90 / 0.15) !important; }
@@ -216,7 +227,8 @@ dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
   transition: opacity 0.25s, transform 0.25s; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: none; }
-.help { padding-left: 1.2em; }
+.help { padding-left: 1.2em; margin-top: 0.2em; }
+.help-head { margin: 1em 0 0; font-size: 1rem; color: var(--accent); }
 .help-note { color: var(--quiet); font-size: 0.9rem; }
 .help-actions { display: flex; gap: 8px; justify-content: space-between; }
 .danger { border-color: #c56a5a !important; color: #f0a596 !important; }

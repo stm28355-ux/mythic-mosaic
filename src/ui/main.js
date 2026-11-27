@@ -7,7 +7,7 @@ import { ACHIEVEMENTS, newAchievements } from '../core/achievements.js';
 import { puzzleBoard, puzzleCreatures, puzzleOpen, cleared } from '../core/puzzle.js';
 import { PUZZLES } from '../data/puzzles.js';
 import { MAPS } from '../data/maps.js';
-import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, bestScore, SCORE_TEXT } from '../core/score.js';
+import { mapBoard, moveScore, stockLeft, starsOf, mapOpen, bestScore, SCORE_TEXT, stepsText } from '../core/score.js';
 import { APP_VERSION } from '../version.js';
 import { drawBoard, CREATURE_LOOK } from './view.js';
 import { creatureSvg } from '../art/creatures.js';
@@ -44,7 +44,7 @@ const TEST_OPEN = new URLSearchParams(location.search).get('test') === 'open';
 
 // island＝今いる島（1＝はじまりの島、2＝火の山の島。判定表 第15回）。board＝今いる島の盤、away＝もう片方の島の盤（まだ渡っていなければ null）
 function fresh() {
-  return { format: SAVE_FORMAT, found: [], board: createBoard(0), island: 1, away: null, selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, settings: { ...DEFAULT_SETTINGS } };
+  return { format: SAVE_FORMAT, found: [], board: createBoard(0), island: 1, away: null, selected: 'water', achieved: [], dry: 0, cleared: [], best: {}, bestRun: {}, settings: { ...DEFAULT_SETTINGS } };
 }
 
 // その島の広さの段（はじまりの島は図鑑の数、火の山の島は火の山の生き物の数で広がる）
@@ -59,7 +59,7 @@ function load() {
     if (s?.format !== SAVE_FORMAT || !s.board?.cells) return null;
     // 0.5.0 までの保存には実績と「新しい生き物が出ていない手数」が、0.6.1 までには解いた問題が、0.8.1 までにはスコアの記録が無い
     // 0.14.0 までの保存には島が1つしかない
-    return { achieved: [], dry: 0, cleared: [], best: {}, island: 1, away: null, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
+    return { achieved: [], dry: 0, cleared: [], best: {}, bestRun: {}, island: 1, away: null, ...s, settings: { ...DEFAULT_SETTINGS, ...s.settings } };
   } catch {
     return null;
   }
@@ -216,27 +216,61 @@ function creatureLines(id) {
   return [`${c.name}（${c.title}）`, `形：${shapeText(c)}`, `効果：${c.text}`];
 }
 
+// 図鑑（判定表 第29回 Z3：縦長すぎた）。島ごとに分け、生き物は小さなタイルで並べる。押した生き物を上の欄に詳しく出す
+let bookIsle = null;
+let bookPick = null;
+const isleOf = (c) => (c.island === 2 ? 2 : 1);
+function bookEntry(c) {
+  const level = hintLevel(c, state.found);
+  const uses = usesShown(c, state.found) ? `<p class="uses">使う物：${usesOf(c).join('・')}</p>` : '';
+  if (level === 'found') {
+    return `${tokenHtml(c.id)}<div><b>${c.name}</b><small>${c.title}</small>
+       <p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
+  }
+  const teller = level === 'rumor' ? byId[c.rumor.by.find((id) => state.found.includes(id))].name : '';
+  return `<span class="token shadow${level === 'rumor' ? ' heard' : ''}">？</span>
+     <div><b>？？？</b><small>No.${c.no}</small>${level === 'rumor' ? '<span class="rumor-mark">噂</span>' : ''}<p>「${c.hint}」</p>`
+    + (level === 'rumor' ? `<p class="rumor">${teller}の噂：「${c.rumor.text}」</p>` : '')
+    + `${uses}</div>`;
+}
 function renderBook() {
   const waiting = CREATURES.filter((c) => hintLevel(c, state.found) === 'rumor').length;
   $('book-note').textContent = waiting ? `噂を聞いた、まだの生き物：${waiting}匹` : '';
-  $('book-list').replaceChildren(...CREATURES.map((c) => {
-    const li = document.createElement('li');
+  const isle = bookIsle ?? state.island;
+  const list = CREATURES.filter((c) => isleOf(c) === isle).sort((x, y) => x.no - y.no);
+  if (!list.some((c) => c.id === bookPick)) bookPick = list[0].id;
+  const isles = [1, 2].map((n) => {
+    const all = CREATURES.filter((c) => isleOf(c) === n);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tab';
+    b.dataset.act = `book-isle-${n}`;
+    b.setAttribute('aria-selected', String(n === isle));
+    b.textContent = `${ISLANDS[n].name} ${all.filter((c) => state.found.includes(c.id)).length}/${all.length}`;
+    b.addEventListener('click', () => { bookIsle = n; renderBook(); });
+    return b;
+  });
+  const detail = document.createElement('div');
+  detail.className = 'book-entry';
+  detail.innerHTML = bookEntry(byId[bookPick]);
+  const grid = document.createElement('div');
+  grid.className = 'book-grid';
+  grid.append(...list.map((c) => {
     const level = hintLevel(c, state.found);
-    li.className = level === 'found' ? 'found' : 'unknown';
-    const uses = usesShown(c, state.found) ? `<p class="uses">使う物：${usesOf(c).join('・')}</p>` : '';
-    if (level === 'found') {
-      li.innerHTML = `${tokenHtml(c.id)}
-         <div><b>${c.name}</b><small>${c.title}</small>
-         <p>形：${shapeText(c)}</p><p>効果：${c.text}</p></div>`;
-    } else {
-      const teller = level === 'rumor' ? byId[c.rumor.by.find((id) => state.found.includes(id))].name : '';
-      li.innerHTML = `<span class="token shadow${level === 'rumor' ? ' heard' : ''}">？</span>
-         <div><b>？？？</b>${level === 'rumor' ? '<span class="rumor-mark">噂</span>' : ''}<p>「${c.hint}」</p>`
-        + (level === 'rumor' ? `<p class="rumor">${teller}の噂：「${c.rumor.text}」</p>` : '')
-        + `${uses}</div>`;
-    }
-    return li;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `book-tile ${level}`;
+    b.dataset.act = 'book-pick';
+    b.setAttribute('aria-pressed', String(c.id === bookPick));
+    b.innerHTML = (level === 'found' ? tokenHtml(c.id) : `<span class="token shadow${level === 'rumor' ? ' heard' : ''}">？</span>`)
+      + `<span class="book-name">${level === 'found' ? c.name : `No.${c.no}`}</span>`;
+    b.addEventListener('click', () => { bookPick = c.id; renderBook(); });
+    return b;
   }));
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs book-isles';
+  tabs.append(...isles);
+  $('book-list').replaceChildren(tabs, detail, grid);
   renderAchievements();
 }
 
@@ -530,6 +564,18 @@ function renderScoreBar() {
   rule.className = 'score-rule';
   rule.textContent = SCORE_TEXT;
   $('score-totals').replaceChildren(p, rule);
+  $('score-export').disabled = sa.moves.length === 0 && !state.bestRun?.[m.id];
+}
+
+// 手順を書き出す（今の手順と、記録の手順）
+function showSteps(which) {
+  const m = sa.m;
+  const run = which === 'best' ? state.bestRun?.[m.id] ?? [] : sa.moves;
+  $('steps-now').setAttribute('aria-selected', String(which === 'now'));
+  $('steps-best').setAttribute('aria-selected', String(which === 'best'));
+  $('steps-best').disabled = !state.bestRun?.[m.id];
+  $('steps-text').value = run.length ? `Mythic Mosaic ${APP_VERSION}\n${stepsText(m, run)}` : '';
+  $('steps-note').textContent = run.length ? '' : (which === 'best' ? 'まだ記録が無い（全部置き終わると残る）' : 'まだ1手も置いていない');
 }
 
 function startScore(m) {
@@ -565,8 +611,8 @@ async function onScoreCell(k) {
   sa.moves.push({ key: k, item: sa.selected, score: moveScore(result.steps), chain: result.steps.length });
   // スコアアタックで初めて出た生き物も図鑑に入る（第10回 U5）
   state.found = recordFound(state, result.steps).found;
-  const u = unlocked(state.found);
-  if (u.stage > state.board.stage) state.board = growIsland(state.board, u.stage);
+  const grown = stageOf(state.island);
+  if (grown > state.board.stage) state.board = growIsland(state.board, grown);
   if (result.steps.length === 0) lines.push('何も起きなかった');
   if (result.steps.length >= 2) lines.push(`${result.steps.length}連鎖！`);
   lines.push(`この手 +${sa.moves.at(-1).score}点`);
@@ -574,6 +620,8 @@ async function onScoreCell(k) {
     const total = totalOf();
     const before = bestScore(state.best[sa.m.id]);
     state.best = { ...state.best, [sa.m.id]: Math.max(before, total) };
+    // 記録の手順（判定表 第29回 Z7）
+    if (total > before || !state.bestRun?.[sa.m.id]) state.bestRun = { ...state.bestRun, [sa.m.id]: sa.moves.map(({ key, item, score, chain }) => ({ key, item, score, chain })) };
     lines.push(`終わり！　${total}点 ${starText(starsOf(sa.m, total))}${total > before ? '（記録を更新）' : ''}`);
   }
   checkAchievements({ steps: result.steps });
@@ -834,6 +882,19 @@ $('cross').addEventListener('click', () => {
   renderPalette();
 });
 
+$('score-export').addEventListener('click', () => {
+  if (!sa || busy) return;
+  showSteps(sa.moves.length ? 'now' : 'best');
+  $('steps').showModal();
+});
+$('steps-now').addEventListener('click', () => showSteps('now'));
+$('steps-best').addEventListener('click', () => showSteps('best'));
+$('steps-copy').addEventListener('click', async () => {
+  const t = $('steps-text').value;
+  if (!t) return;
+  try { await navigator.clipboard.writeText(t); $('steps-note').textContent = 'コピーした'; } catch { $('steps-text').select(); $('steps-note').textContent = '選んだので、手でコピーしてほしい'; }
+});
+
 $('puzzle-hint').addEventListener('click', () => {
   if (!pz || busy) return;
   pz.hints = Math.min(3, pz.hints + 1);
@@ -847,14 +908,14 @@ $('open-puzzles').addEventListener('click', () => {
   renderPuzzleList();
   $('puzzles').showModal();
 });
-$('open-book').addEventListener('click', () => { renderBook(); showTab('creatures'); $('book').showModal(); });
+$('open-book').addEventListener('click', () => { bookIsle = null; renderBook(); showTab('creatures'); $('book').showModal(); });
 function showTab(name) {
-  for (const b of document.querySelectorAll('.tab')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+  for (const b of document.querySelectorAll('.tab[data-tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
   $('book-list').hidden = name !== 'creatures';
   $('book-note').hidden = name !== 'creatures';
   $('ach-panel').hidden = name !== 'achievements';
 }
-for (const b of document.querySelectorAll('.tab')) b.addEventListener('click', () => showTab(b.dataset.tab));
+for (const b of document.querySelectorAll('.tab[data-tab]')) b.addEventListener('click', () => showTab(b.dataset.tab));
 $('open-help').addEventListener('click', () => {
   $('set-fx').checked = state.settings.fx;
   $('set-preview').checked = state.settings.preview;

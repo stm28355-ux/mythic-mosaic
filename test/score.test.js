@@ -72,3 +72,18 @@ test('地図の盤に置ける（地図の外には置けない）', () => {
   assert.throws(() => place(b, 0, -4, 'water'));
   assert.doesNotThrow(() => place(b, 0, 0, 'water'));
 });
+
+// 判定表 第29回 Z7：スコアアタックの手順を書き出す
+import { cellLabel, stepsText } from '../src/core/score.js';
+test('手順の書き出し：場所は地図の行と並びで言い、1手ずつ点と連鎖を書く', () => {
+  assert.equal(cellLabel('0,-4'), '上から1行目・左から1番目');
+  assert.equal(cellLabel('-4,0'), '上から5行目・左から1番目');
+  assert.equal(cellLabel('4,0'), '上から5行目・左から9番目');
+  const m = MAPS[0];
+  const t = stepsText(m, [{ key: '0,0', item: 'water', score: 1, chain: 1 }, { key: '1,0', item: 'grass', score: 7, chain: 3 }]);
+  const lines = t.split('\n');
+  assert.ok(lines[0].startsWith(`スコアアタック「${m.title}」　8点`));
+  assert.ok(lines[0].endsWith(`（2／${Object.values(m.stock).reduce((a, b) => a + b, 0)}手）`));
+  assert.equal(lines[1], '1. 水を 上から5行目・左から5番目 に置く → +1点');
+  assert.equal(lines[2], '2. 草を 上から5行目・左から6番目 に置く → +7点（3連鎖）');
+});

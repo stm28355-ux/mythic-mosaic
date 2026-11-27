@@ -23,7 +23,10 @@
   <div id="log" class="log" data-ui="log" aria-live="polite"></div>
 
   <div id="score-bar" class="puzzle-bar" data-ui="score-bar" hidden>
-    <p id="score-title" class="puzzle-title"></p>
+    <div class="puzzle-head">
+      <p id="score-title" class="puzzle-title"></p>
+      <button type="button" id="score-export" class="puzzle-hint" data-act="score-export">手順を書き出す</button>
+    </div>
     <div id="score-totals" class="score-totals"></div>
   </div>
 
@@ -61,7 +64,7 @@
     <button type="button" class="tab" role="tab" data-tab="achievements">実績</button>
   </div>
   <p id="book-note" class="book-note"></p>
-  <ol id="book-list" class="book"></ol>
+  <div id="book-list" class="book book-wrap" data-ui="book"></div>
   <div id="ach-panel" hidden>
     <p class="book-note">取った実績 <span id="ach-count"></span>（ごほうびの見た目は、これから作る）</p>
     <ol id="ach-list" class="ach"></ol>
@@ -82,27 +85,51 @@
     <label><input type="checkbox" id="set-fx" data-act="set-fx"> エフェクト（生き物が出る時・効果を当てる時の動き。切ると待たずに進む）</label>
     <label><input type="checkbox" id="set-preview" data-act="set-preview"> 置く前に知らせる（マスにマウスを乗せる・長押しすると、最初に出る生き物が分かる）</label>
   </div>
+  <h3 class="help-head">はじめに</h3>
   <ol class="help">
     <li>下で置く物を選び、島のマスを押して置く。</li>
     <li>ある形ができると、幻の生き物がすぐ現れて中心のマスに住む。</li>
-    <li>現れた生き物は周りの土地を変える。変わった所で次の形ができると連鎖する。</li>
-    <li>見つけた生き物は図鑑に残る。見つける前は一言だけ分かる。</li>
+    <li>現れた生き物は周りの土地を変える。変わった所で次の形ができると連鎖する。隣の生き物を帰す生き物もいて、そのときは空いたマスで連鎖が続く。</li>
+    <li>見つけた生き物は図鑑に残る。見つける前は一言だけ分かる。島の生き物を押すと、名前と形と効果が出る（帰すを選んでいるときは帰す）。</li>
     <li>島が埋まってきたら「帰す」を選んで生き物を押すと、島から帰る。土地はそのまま残り、図鑑からも消えない。</li>
     <li>生き物を見つけるほど、置ける物と島が広がる。3匹で丘と37マス、8匹で岩、10匹で61マス。巣は、ある生き物（？？？）を見つけると置ける。</li>
-    <li>生き物の中には、隣の生き物を帰すものもいる。そのときは空いたマスで連鎖が続く。</li>
     <li>生き物を見つけると、まだの生き物の噂を話す。噂は図鑑にも残り、形に使う物も分かる。</li>
     <li>新しい生き物がしばらく出ないと、使う物が分かっている生き物が1手で現れる所が、島の上でほんのり光る。</li>
     <li>「置く前に知らせる」が入っていると、マスにマウスを乗せる（スマホは長押し）だけで、置いたときに最初に出る生き物が分かる。まだ見つけていない生き物は「？？？」。連鎖問題では出ない。</li>
-    <li>図鑑の「実績」で、取った実績を見られる。島の生き物を押すと、名前と形と効果が出る（帰すを選んでいるときは帰す）。</li>
-    <li>「挑戦」の連鎖問題では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。</li>
-    <li>図鑑が20匹になると、海の向こうの「火の山の島」へ渡れる（上の「⇄ 火の山の島へ」）。2つの島の盤は別々に残り、図鑑と実績は同じ。火の山の島では水・砂・岩・巣の代わりに、灰・溶岩・薪が置ける（火の山の島の水は、生き物だけが出す）。火の山の生き物は火の山の島にしか出ない。炎は手では置けず、生き物が薪に火をつけて出す。丘と谷は火の山の生き物3匹、種は5匹で開き、島は火の山の生き物3匹・6匹で広がる。谷は高さを1下げる（はじまりの島でも使える）。</li>
-    <li>火の山の島には、隣の生き物を反対側へ1マス押す生き物がいる。押す先に生き物がいると動かない。島の外へ押された生き物は帰る。</li>
-    <li>「挑戦」の一番下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。地図は図鑑の数で開く。点は出た生き物1匹に1点、1手の連鎖が3・5・8段に届くと追加点。</li>
+    <li>図鑑の「実績」で、取った実績を見られる。</li>
+  </ol>
+  <h3 class="help-head">火の山の島</h3>
+  <ol class="help">
+    <li>図鑑が20匹になると、海の向こうの「火の山の島」へ渡れる（上の「⇄ 火の山の島へ」）。2つの島の盤は別々に残り、図鑑と実績は同じ。</li>
+    <li>火の山の島では、水・砂・岩・巣の代わりに灰・溶岩・薪が置ける。炎と、火の山の島の水は、手では置けず生き物だけが出す。</li>
+    <li>火の山の生き物は火の山の島にしか出ない。はじまりの島の生き物も、形ができれば火の山の島に出る（砂と巣の生き物は出ない）。</li>
+    <li>丘と谷は火の山の生き物3匹、種は5匹で開く。島は火の山の生き物3匹・6匹で広がる。谷は高さを1下げる（はじまりの島でも使える）。</li>
+    <li>隣の生き物を反対側へ1マス押す生き物がいる。押す先に生き物がいると動かない。島の外へ押された生き物は帰る。</li>
+  </ol>
+  <h3 class="help-head">挑戦（連鎖問題とスコアアタック）</h3>
+  <ol class="help">
+    <li>「挑戦」の連鎖問題では、決まった順の置く物で目標の連鎖を出す。問題に出てくる生き物を図鑑で全部見つけると開く。「火の山・」の組は火の山の島の盤で解く。</li>
+    <li>一覧の下の「スコアアタック」では、決まった地図に、数の決まった置く物を好きな順に全部置いて点を集める。はじまりの島の地図は図鑑の数、火の山の地図は火の山の生き物の数で開く。</li>
+    <li>点は出た生き物1匹に1点、1手の連鎖が3・5・8段に届くと追加点。</li>
   </ol>
   <p class="help-note">生き物の居るマスには置けない（先に帰す）。帰しただけでは連鎖は起きない。地面を置くと上の物（木・花・岩・巣）は消え、高さは残る。岩と巣は地面を変えずに上に置く。同じ種類の生き物は、1回の連鎖で1つの段にしか出ない。</p>
   <form method="dialog" class="help-actions">
     <button>閉じる</button>
     <button type="button" id="reset" class="danger">記録を全部消す</button>
+  </form>
+</dialog>
+
+<dialog id="steps" data-ui="steps">
+  <h2>スコアアタックの手順</h2>
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" id="steps-now" data-act="steps-now">今の手順</button>
+    <button type="button" class="tab" role="tab" id="steps-best" data-act="steps-best">記録の手順</button>
+  </div>
+  <textarea id="steps-text" class="steps-text" rows="12" readonly></textarea>
+  <p id="steps-note" class="book-note"></p>
+  <form method="dialog" class="help-actions">
+    <button type="button" id="steps-copy" data-act="steps-copy">コピー</button>
+    <button>閉じる</button>
   </form>
 </dialog>
 

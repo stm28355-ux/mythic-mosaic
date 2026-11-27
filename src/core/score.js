@@ -5,6 +5,7 @@
 // 地図は src/data/maps.js。ここには、地図から盤を作る・点を数える・星を数える関数を置く。
 import { key } from './hex.js';
 import { island2Count } from './rules.js';
+import { PLACEABLES } from './creatures.js';
 
 // 地図の行の文字 → マス（'.' は地図の外）
 export const MAP_CODES = Object.freeze({
@@ -76,3 +77,23 @@ export function mapOpen(map, found) {
   if (map.unlock2 !== undefined) return island2Count(found) >= map.unlock2;
   return found.length >= map.unlockAt;
 }
+
+// ---- 手順の書き出し（判定表 第29回 Z7：スコアアタックのクリア手順を出力できるように）----
+// マスの場所を、地図の行と並びで言う（上から何行目・左から何番目）
+export function cellLabel(key) {
+  const [q, r] = key.split(',').map(Number);
+  const q0 = Math.max(-MAP_RADIUS, -MAP_RADIUS - r);
+  return `上から${r + MAP_RADIUS + 1}行目・左から${q - q0 + 1}番目`;
+}
+// moves: [{ key, item, score, chain }]。1行目に地図と点、そのあと1手ずつ
+export function stepsText(map, moves) {
+  const total = moves.reduce((s, m) => s + m.score, 0);
+  const all = Object.values(map.stock).reduce((a, b) => a + b, 0);
+  const stars = starsOf(map, total);
+  const name = (id) => PLACEABLES.find((p) => p.id === id)?.name ?? id;
+  return [
+    `スコアアタック「${map.title}」　${total}点 ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}（${moves.length}／${all}手）`,
+    ...moves.map((m, i) => `${i + 1}. ${name(m.item)}を ${cellLabel(m.key)} に置く → +${m.score}点${m.chain >= 2 ? `（${m.chain}連鎖）` : ''}`),
+  ].join('\n');
+}
+
