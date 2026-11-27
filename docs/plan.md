@@ -35,6 +35,7 @@
 | 2026-11-27 | 第27回 工程8：火の山の問題の残り12問と地図2面 https://claude.ai/artifact/WqeucaurdQGpwFHSoHdzzC | G1〜G8 全部 OK（出てくる生き物の数も今のまま、次は実績） |
 | 2026-11-27 | 第28回 工程8：火の山の島の実績 https://claude.ai/artifact/YHXAykUnsSowjr7maciKHA | E1・E2・H1〜H12 全部 OK → 0.22.0。工程8 済 |
 | 2026-11-27 | 第29回 工程9：最後の調整でやること https://claude.ai/artifact/BQHf8feJcYn14bRqT8ZJ6E | Z1・Z2・Z4〜Z6 OK。Z3 OK（図鑑は縦長すぎるので調整）。Z7 直す：機能を一点追加、スコアアタックのクリア手順を出力できるように → 0.23.0 |
+| 2026-11-27 | 第30回 工程9：図鑑・手順の書き出しと画面の採点 https://claude.ai/artifact/GkCNdMv2TNr1HxJzs9Vtvr | 判定待ち |
 
 ## 作るときの決めごと
 
