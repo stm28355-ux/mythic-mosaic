@@ -112,7 +112,8 @@ test('㉘タネボウズ：種のある灰に、隣の草2つで出て、草に�
 test('㉙フイゴ：炎のマスに、隣の生き物と薪2つで出て、押して火をつける', () => {
   const b = isle2({ '0,0': { object: 'fire' }, '0,1': { object: 'firewood' }, '-1,0': { creature: 'iwao' } });
   const r = place(b, 1, 0, 'firewood');
-  assert.deepEqual(firstStep(r), ['fuigo']);
+  // 置いた薪の隣に炎がちょうど1つなので、㊳ヒバチも同じ段に出る
+  assert.deepEqual(firstStep(r), ['fuigo', 'hibachi']);
   assert.equal(r.board.cells['-2,0'].creature, 'iwao');
   assert.equal(r.board.cells['1,0'].object, 'fire');
   assert.equal(r.board.cells['0,1'].object, 'fire');
@@ -179,4 +180,51 @@ test('㉟マグマル：高い溶岩の隣に荒れ地3つで出て、荒れ地�
   assert.deepEqual(firstStep(r), ['magumaru']);
   assert.equal(r.board.cells['1,-1'].ground, 'lava');
   assert.equal(r.board.cells['1,0'].ground, 'grass');
+});
+
+// ---- 第18回の残り ㊱〜㊵ ----
+test('火の山の生き物は16匹', () => assert.equal(ISLAND2.length, 16));
+
+test('㊱ケムリ：炎のマスが灰3つに囲まれ、隣に生き物がいると出て、隣の生き物を帰す', () => {
+  const b = isle2({ '0,0': { object: 'fire' }, '1,0': { ground: 'ash' }, '0,1': { ground: 'ash' }, '-1,0': { creature: 'iwao' } });
+  const r = place(b, -1, 1, 'ash');
+  assert.ok(firstStep(r).includes('kemuri'));
+  assert.equal(r.board.cells['-1,0'].creature, null);
+});
+
+test('㊲アナホリ：高さ2の灰の隣に灰2つで出て、隣の高さを1下げる', () => {
+  const b = isle2({ '0,0': { ground: 'ash', height: 2 }, '1,0': { ground: 'ash', height: 1 }, '0,1': { height: 2 } });
+  const r = place(b, -1, 1, 'ash');
+  assert.deepEqual(firstStep(r), ['anahori']);
+  assert.equal(r.board.cells['1,0'].height, 0);
+  assert.equal(r.board.cells['0,1'].height, 1);
+  assert.equal(r.board.cells['0,0'].height, 2, '中心は高いまま');
+});
+
+test('㊳ヒバチ：薪の隣に炎がちょうど1つで生き物がいないと出て、隣の灰に種をまく', () => {
+  const b = isle2({ '1,0': { object: 'fire' }, '0,1': { ground: 'ash' } });
+  const r = place(b, 0, 0, 'firewood');
+  assert.deepEqual(firstStep(r), ['hibachi']);
+  assert.equal(r.board.cells['0,1'].object, 'seed');
+  const two = isle2({ '1,0': { object: 'fire' }, '-1,0': { object: 'fire' }, '0,1': { ground: 'ash' } });
+  assert.ok(!firstStep(place(two, 0, 0, 'firewood')).includes('hibachi'), '炎が2つでは出ない');
+});
+
+test('㊴ヤマオコシ：高さ0の溶岩の隣に生き物2匹と溶岩2つで出て、押して高さを上げる', () => {
+  const b = isle2({ '1,0': { creature: 'kokedama' }, '-1,0': { creature: 'iwao' }, '0,1': { ground: 'lava' }, '0,-1': { ground: 'lava' } });
+  const r = place(b, 0, 0, 'lava');
+  assert.deepEqual(firstStep(r), ['yamaokoshi']);
+  assert.equal(r.board.cells['2,0'].creature, 'kokedama');
+  assert.equal(r.board.cells['0,0'].height, 1);
+  assert.equal(r.board.cells['0,1'].height, 1);
+});
+
+test('㊵ヒノヤマヌシ：高さ2の炎のマスに生き物4匹で出て、溶岩を灰に、灰を花の咲いた草にする', () => {
+  const b2 = isle2({ '0,0': { object: 'fire', height: 2 }, '1,0': { creature: 'iwao' }, '-1,0': { creature: 'iwao' }, '0,1': { creature: 'iwao' }, '-1,1': { creature: 'pocha' },
+    '2,0': { ground: 'lava' }, '-2,0': { ground: 'ash' } });
+  const r2 = place(b2, 0, -1, 'ash');
+  assert.ok(firstStep(r2).includes('hinoyamanushi'));
+  assert.equal(r2.board.cells['2,0'].ground, 'ash');
+  assert.equal(r2.board.cells['-2,0'].ground, 'grass');
+  assert.equal(r2.board.cells['-2,0'].object, 'flower');
 });

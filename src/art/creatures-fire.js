@@ -19,6 +19,12 @@ const F = {
   squirrel: '#c9773a', squirrelLight: '#f0b27a', squirrelShade: '#9a5626', handle: '#8a5a32', blade: '#cfd6de', bladeShade: '#9aa3ad',
   coal: '#57505e', coalLight: '#7d7488', crack: '#ff6a3c', crackLight: '#ffd35c',
   magma: '#ff7a3c', magmaLight: '#ffc04a', magmaDeep: '#d0452e', crust: '#5a3a36',
+  // ㊱〜㊵
+  smoke: '#c9c4cf', smokeLight: '#eeeaf2', smokeShade: '#9a94a3',
+  digger: '#9c7a5c', diggerLight: '#c8a884', diggerShade: '#6f5440', claw: '#f3e6d6',
+  pot: '#8a5a3c', potLight: '#b07a52', potShade: '#5e3c28', potRim: '#c9a27a',
+  turtle: '#7a8a5a', turtleLight: '#a8b87e', shell: '#6a5a52', shellLight: '#8c7a70',
+  beast: '#e0503c', beastLight: '#ff9a6a', beastShade: '#a8341f', mane: '#ffb347', maneLight: '#ffe07a',
 };
 
 export const FIRE = {
@@ -137,4 +143,62 @@ export const FIRE = {
     .ellipse(23, 10, 3, 2, F.crust).ellipse(8, 18, 2, 1.5, F.crust).ellipse(21, 26, 2.5, 1, F.crust)
     .eye(12, 15).eye(18, 15).rect(15, 19, 16, 19, F.magmaDeep)
     .outline(INK),
+  // 煙の子：もくもくの煙。眠そうな半分の目
+  kemuri: () => grid()
+    .ellipse(16, 20, 11, 7, F.smoke).ellipse(10, 14, 6, 5, F.smoke).ellipse(20, 11, 7, 6, F.smoke).ellipse(26, 17, 4, 4, F.smoke)
+    .ellipse(18, 8, 3, 2, F.smokeLight).ellipse(9, 12, 2, 1.5, F.smokeLight)
+    .tint(4, 24, 28, 28, F.smokeShade, F.smoke)
+    .rect(11, 18, 13, 18, INK).px1(11, 17, F.smokeShade).px1(12, 17, F.smokeShade).px1(13, 17, F.smokeShade)
+    .rect(19, 18, 21, 18, INK).px1(19, 17, F.smokeShade).px1(20, 17, F.smokeShade).px1(21, 17, F.smokeShade)
+    .px1(12, 19, '#ffffff').px1(20, 19, '#ffffff')
+    .ellipse(16, 22, 1.5, 1, F.smokeShade)
+    .ellipse(7, 6, 1.5, 1.5, F.smoke).ellipse(4, 3, 1, 1, F.smoke)
+    .outline(INK),
+  // 穴掘りの子：大きな爪の手で掘る、あなぐまの子
+  anahori: () => grid()
+    .ellipse(16, 18, 10, 9, F.digger).ellipse(16, 21, 6, 5, F.diggerLight)
+    .rect(11, 9, 21, 12, F.diggerLight).line(16, 9, 16, 14, F.diggerShade)
+    .ellipse(10, 9, 2, 2, F.digger).ellipse(22, 9, 2, 2, F.digger)
+    .ellipse(5, 22, 3.5, 2.5, F.digger).ellipse(27, 22, 3.5, 2.5, F.digger)
+    .line(2, 24, 3, 26, F.claw).line(4, 25, 5, 27, F.claw).line(28, 25, 27, 27, F.claw).line(30, 24, 29, 26, F.claw)
+    .ellipse(16, 16, 1.6, 1.2, INK)
+    .ellipse(12, 29, 2.5, 1.3, F.diggerShade).ellipse(20, 29, 2.5, 1.3, F.diggerShade)
+    .eye(12, 13).eye(19, 13)
+    .outline(INK),
+  // 火鉢の子：まるい火鉢の体。頭に小さな火
+  hibachi: () => grid()
+    .poly([[16, 2], [19, 7], [18, 10], [14, 10], [13, 7]], F.flame).poly([[16, 5], [17, 8], [15, 8]], F.flameLight)
+    .ellipse(16, 12, 9, 2, F.potRim)
+    .ellipse(16, 19, 11, 8, F.pot).rect(5, 12, 27, 14, F.pot).ellipse(16, 12, 9, 1.5, F.potShade)
+    .line(6, 17, 26, 17, F.potLight).line(7, 23, 25, 23, F.potShade)
+    .ellipse(10, 29, 2, 1.3, F.potShade).ellipse(22, 29, 2, 1.3, F.potShade)
+    .eye(11, 18).eye(19, 18).rect(15, 21, 16, 21, F.potShade)
+    .outline(INK),
+  // 山起こし：背中に小さな火山を背負った亀
+  yamaokoshi: () => grid()
+    .poly([[6, 22], [10, 10], [13, 8], [19, 8], [22, 10], [26, 22]], F.shell)
+    .poly([[13, 8], [15, 3], [17, 3], [19, 8]], F.shell).ellipse(16, 3, 2, 1, F.flame).px1(16, 1, F.flameLight).px1(15, 0, F.flame)
+    .line(11, 14, 21, 14, F.shellLight).line(9, 18, 23, 18, F.shellLight)
+    .ellipse(27, 21, 4, 3.5, F.turtle).ellipse(4, 23, 2, 1.5, F.turtle)
+    .rect(5, 22, 27, 24, F.turtle)
+    .ellipse(9, 27, 2.5, 2, F.turtle).ellipse(22, 27, 2.5, 2, F.turtle)
+    .eye(27, 19).px1(30, 22, F.turtleLight)
+    .outline(INK),
+  // 火の山の主：炎のたてがみの大きな獣。いちばんの大物
+  hinoyamanushi: () => {
+    const g = grid();
+    for (let i = 0; i < 10; i++) {
+      const a = Math.PI * (0.9 + (1.2 * i) / 9);
+      g.poly([[16 + Math.cos(a) * 6, 13 + Math.sin(a) * 6], [16 + Math.cos(a - 0.15) * 13, 13 + Math.sin(a - 0.15) * 12], [16 + Math.cos(a + 0.2) * 7, 13 + Math.sin(a + 0.2) * 7]], i % 2 ? F.mane : F.flame);
+    }
+    return g
+      .ellipse(16, 13, 10, 9, F.flame).ellipse(16, 13, 8, 7, F.mane)
+      .ellipse(16, 24, 11, 6, F.beast).tint(5, 27, 27, 30, F.beastShade, F.beast)
+      .ellipse(16, 14, 6.5, 6, F.beast).ellipse(16, 17, 3.5, 2.5, F.beastLight)
+      .rect(15, 16, 16, 16, F.beastShade).px1(14, 18, F.beastShade).px1(17, 18, F.beastShade).rect(15, 19, 16, 19, F.beastShade)
+      .rect(7, 27, 10, 30, F.beast).rect(22, 27, 25, 30, F.beast)
+      .poly([[11, 4], [13, 0], [14, 5]], F.maneLight).poly([[18, 5], [19, 0], [21, 4]], F.maneLight)
+      .eye(12, 12).eye(18, 12)
+      .outline(INK);
+  },
 };

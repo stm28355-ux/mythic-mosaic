@@ -192,9 +192,9 @@ test('生き物のデータの形がそろっている', () => {
     assert.ok(sp.name && sp.text && sp.center && (sp.around || sp.line) && (sp.effect || sp.effects));
     assert.ok(sp.hint);
   }
-  // 第1の島24匹＋火の山の生き物（試作6匹＋第18回の5匹）
-  assert.equal(CREATURES.length, 35);
-  assert.deepEqual(CREATURES.map((c) => c.no), Array.from({ length: 35 }, (_, i) => i + 1));
+  // 第1の島24匹＋火の山の生き物16匹（試作6匹＋第18回の10匹）
+  assert.equal(CREATURES.length, 40);
+  assert.deepEqual(CREATURES.map((c) => c.no), Array.from({ length: 40 }, (_, i) => i + 1));
 });
 
 test('帰す：生き物だけがいなくなり、地面・木・高さは残り、連鎖は起こさない（#1）', () => {

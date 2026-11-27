@@ -408,4 +408,52 @@ export const CREATURES = Object.freeze([
     text: '隣の荒れ地をすべて溶岩にする',
     hint: '高い所から、何もない所へ流れる',
   },
+
+  // ---- 火の山の生き物の残り ㊱〜㊵（判定表 第18回）----
+  {
+    id: 'kemuri', no: 36, name: 'ケムリ', title: '煙の子', group: '火の山', island: 2,
+    center: { object: 'fire' },
+    around: [{ match: { ground: 'ash' }, min: 3 }, { match: ANY, min: 1 }],
+    effect: { kind: 'release', range: 1, from: ANY },
+    text: '隣の生き物を帰す（煙たくて）',
+    hint: '灰に囲まれた火のそばに、誰かがいると',
+  },
+  {
+    id: 'anahori', no: 37, name: 'アナホリ', title: '穴掘りの子', group: '火の山', island: 2,
+    center: { ground: 'ash', height: 2 },
+    around: { match: { ground: 'ash' }, min: 2 },
+    effect: { kind: 'lower', range: 1 },
+    text: '隣の高さをすべて1下げる（中心は高いまま）',
+    hint: '灰の山のてっぺんで、まわりを掘る',
+  },
+  {
+    id: 'hibachi', no: 38, name: 'ヒバチ', title: '火鉢の子', group: '火の山', island: 2,
+    center: { object: 'firewood' },
+    around: [{ match: { object: 'fire' }, min: 1, max: 1 }, { match: ANY, max: 0 }],
+    effect: { kind: 'grow', range: 1, from: { ground: 'ash', object: null }, object: 'seed' },
+    text: '隣の灰（上に何もない）すべてに種をまく',
+    hint: 'ひとりで小さな火の番をする',
+  },
+  {
+    id: 'yamaokoshi', no: 39, name: 'ヤマオコシ', title: '山起こし', group: '火の山', island: 2,
+    center: { ground: 'lava', height: 0 },
+    around: [{ match: ANY, min: 2 }, { match: { ground: 'lava' }, min: 2 }],
+    effects: [
+      { kind: 'push', range: 1, from: ANY },
+      { kind: 'raise', range: 1 },
+    ],
+    text: '隣の生き物を押し、中心と隣の高さを1上げる',
+    hint: 'にぎやかな溶岩の下で、山が目を覚ます',
+  },
+  {
+    id: 'hinoyamanushi', no: 40, name: 'ヒノヤマヌシ', title: '火の山の主', group: '火の山', island: 2,
+    center: { object: 'fire', height: 2 },
+    around: { match: ANY, min: 4 },
+    effects: [
+      { kind: 'convert', range: 2, from: { ground: 'lava' }, to: 'ash' },
+      { kind: 'convert', range: 2, from: { ground: 'ash' }, to: 'grass', object: 'flower' },
+    ],
+    text: '2マス先までの溶岩を灰に、灰を花の咲いた草にする',
+    hint: '火の山のてっぺんに、みんなが集まると',
+  },
 ]);
