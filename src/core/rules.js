@@ -107,12 +107,16 @@ export function shapeAt(board, c, sp) {
   return true;
 }
 
+// 火の山の生き物（island: 2）は火の山の島でだけ出る。はじまりの島の生き物はどちらの島でも出る（第16回 I7）。
+// 島の無い盤（問題・スコアアタック）は、はじまりの島と同じ
+const bornHere = (board, sp) => sp.island !== 2 || board.island === 2;
+
 // 生き物が住める形ができているのに住んでいない中心（置く前に何も起きない盤かを確かめるのに使う）
 export function readyShapes(board, catalog = CREATURES) {
   const out = [];
   for (const [k, c] of Object.entries(board.cells)) {
     if (c.creature) continue;
-    for (const sp of catalog) if (shapeAt(board, c, sp)) out.push({ key: k, id: sp.id });
+    for (const sp of catalog) if (bornHere(board, sp) && shapeAt(board, c, sp)) out.push({ key: k, id: sp.id });
   }
   return out;
 }
@@ -133,7 +137,7 @@ function runStep(board, changed, used, catalog) {
     const c = board.cells[k];
     if (c.creature) continue;
     for (const sp of catalog) {
-      if (used.has(sp.id)) continue;
+      if (used.has(sp.id) || !bornHere(board, sp)) continue;
       if (shapeAt(board, c, sp)) wants.set(k, [...(wants.get(k) ?? []), sp]);
     }
   }
@@ -241,8 +245,10 @@ export function isOpen(item, found = Infinity) {
 // その島で開いているか（第2の島では、丘が第2の島の生き物3匹で開く＝第16回 I5）
 export function isOpenOn(item, found, island = 1) {
   if (!isOpen(item, found)) return false;
-  const late = island === 2 ? ISLANDS[2].late?.[item.id] : undefined;
-  return late === undefined || found === Infinity || island2Count(found) >= late;
+  if (found === Infinity || island !== 2) return true;
+  const late = ISLANDS[2].late?.[item.id];
+  const by = ISLANDS[2].lateBy?.[item.id];
+  return (late === undefined || island2Count(found) >= late) && (by === undefined || found.includes(by));
 }
 
 // その島に置ける物か（第16回 案②：島ごとに8つ）。島の無い盤（問題・スコアアタック）は第1の島と同じ

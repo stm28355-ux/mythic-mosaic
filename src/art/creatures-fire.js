@@ -13,6 +13,12 @@ const F = {
   seed: '#b07a46', seedLight: '#d8a56c', seedShade: '#84552c', sprout: '#6fc25a', sproutLight: '#a8e08a',
   bag: '#d9925a', bagLight: '#f2bf8a', bagShade: '#a86a3a', cheek: '#ff9f9f', puff: '#e3ecf8', puffLine: '#b8c8e4',
   bird: '#ff6b4a', birdLight: '#ffb08a', birdShade: '#d0452e', beak: '#ffd35c',
+  // 第18回の5匹
+  lake: '#4f86b8', lakeLight: '#9fd0f0', lakeShade: '#36648f', steam: '#eef4fb', spirit: '#bfe6ff', spiritShade: '#8cc6ec', pink: '#ffb3c6',
+  obsid: '#463f60', obsidLight: '#8d7fc4', obsidShine: '#d6ccff',
+  squirrel: '#c9773a', squirrelLight: '#f0b27a', squirrelShade: '#9a5626', handle: '#8a5a32', blade: '#cfd6de', bladeShade: '#9aa3ad',
+  coal: '#57505e', coalLight: '#7d7488', crack: '#ff6a3c', crackLight: '#ffd35c',
+  magma: '#ff7a3c', magmaLight: '#ffc04a', magmaDeep: '#d0452e', crust: '#5a3a36',
 };
 
 export const FIRE = {
@@ -83,5 +89,52 @@ export const FIRE = {
     .poly([[15, 11], [17, 11], [16, 14]], F.beak)
     .tint(10, 24, 22, 26, F.birdShade, F.bird)
     .eye(13, 8).eye(18, 8)
+    .outline(INK),
+  // 火口の湖：湖から上半身を出す、湯けむりの精
+  kakouko: () => grid()
+    .px1(9, 7, F.steam).px1(8, 6, F.steam).px1(9, 5, F.steam).px1(23, 7, F.steam).px1(24, 6, F.steam).px1(23, 5, F.steam).px1(16, 5, F.steam).px1(17, 4, F.steam)
+    .ellipse(16, 17, 8, 7.5, F.spirit).tint(8, 20, 24, 24, F.spiritShade, F.spirit)
+    .ellipse(13, 13, 2, 1.2, F.steam)
+    .ellipse(16, 26, 15, 5, F.lake).line(4, 25, 9, 25, F.lakeLight).line(22, 27, 27, 27, F.lakeLight).tint(2, 29, 30, 31, F.lakeShade, F.lake)
+    .ellipse(6, 23, 2, 1.4, F.spirit).ellipse(26, 23, 2, 1.4, F.spirit)
+    .eye(12, 16).eye(18, 16).px1(11, 19, F.pink).px1(21, 19, F.pink).rect(15, 20, 16, 20, F.spiritShade)
+    .outline(INK),
+  // 黒曜の子：角ばった黒い石の体。面に紫の光
+  kuroishi: () => grid()
+    .poly([[16, 3], [25, 9], [28, 19], [23, 28], [9, 28], [4, 19], [7, 9]], F.obsid)
+    .poly([[16, 3], [25, 9], [16, 12]], F.obsidLight).poly([[7, 9], [16, 3], [16, 12]], F.obsidLight)
+    .line(16, 12, 16, 15, F.obsidLight).line(4, 19, 9, 17, F.obsidLight).line(28, 19, 23, 17, F.obsidLight)
+    .px1(20, 6, F.obsidShine).px1(21, 7, F.obsidShine).px1(11, 7, F.obsidShine)
+    .ellipse(11, 29, 2.5, 1.3, F.obsid).ellipse(21, 29, 2.5, 1.3, F.obsid)
+    .eyeW(11, 18).eyeW(19, 18).line(14, 23, 17, 23, F.obsidLight)
+    .outline(INK),
+  // 木こりのりす：大きなしっぽのりす。小さな斧を抱える
+  kikorisu: () => grid()
+    .path([[8, 26], [4, 20], [4, 12], [8, 7], [12, 9]], 3.2, F.squirrel).path([[5, 18], [5, 12], [8, 9]], 1.2, F.squirrelLight)
+    .ellipse(17, 21, 6.5, 7, F.squirrel).ellipse(18, 22, 3.5, 4.5, F.squirrelLight)
+    .ellipse(19, 11, 6, 5.5, F.squirrel).poly([[14, 7], [15, 2], [17, 6]], F.squirrel).poly([[21, 6], [23, 2], [24, 7]], F.squirrel)
+    .ellipse(23, 13, 2.5, 2, F.squirrelLight)
+    .line(25, 27, 28, 14, F.handle).poly([[26, 13], [31, 11], [31, 18], [27, 17]], F.blade).line(30, 12, 30, 17, F.bladeShade)
+    .ellipse(24, 21, 2, 1.5, F.squirrel)
+    .ellipse(14, 29, 2.5, 1.3, F.squirrelShade).ellipse(21, 29, 2.5, 1.3, F.squirrelShade)
+    .eye(17, 10).eye(22, 10).px1(25, 13, INK)
+    .outline(INK),
+  // 炭の子：まるい炭のかたまり。ひびに赤い光
+  suminoko: () => grid()
+    .ellipse(16, 18, 11, 10, F.coal).ellipse(12, 12, 4, 2.5, F.coalLight)
+    .line(7, 14, 10, 18, F.crack).line(10, 18, 9, 22, F.crack).line(23, 11, 21, 15, F.crack).line(21, 15, 24, 19, F.crack).line(14, 25, 19, 26, F.crack)
+    .px1(10, 18, F.crackLight).px1(21, 15, F.crackLight)
+    .ellipse(11, 29, 2.5, 1.3, F.coal).ellipse(21, 29, 2.5, 1.3, F.coal)
+    .px1(7, 5, F.crack).px1(25, 4, F.crackLight).px1(27, 7, F.crack)
+    .eyeW(12, 17).eyeW(18, 17).line(15, 21, 16, 21, F.coalLight)
+    .outline(INK),
+  // 溶岩の子：どろりと垂れる溶岩の体。ところどころ黒い殻
+  magumaru: () => grid()
+    .ellipse(16, 16, 10, 9, F.magma).ellipse(16, 25, 13, 4, F.magma)
+    .rect(6, 22, 8, 28, F.magma).rect(24, 21, 26, 29, F.magma).rect(13, 26, 15, 30, F.magma)
+    .ellipse(13, 11, 3, 2, F.magmaLight).ellipse(19, 21, 4, 2.5, F.magmaLight)
+    .tint(3, 27, 29, 31, F.magmaDeep, F.magma)
+    .ellipse(23, 10, 3, 2, F.crust).ellipse(8, 18, 2, 1.5, F.crust).ellipse(21, 26, 2.5, 1, F.crust)
+    .eye(12, 15).eye(18, 15).rect(15, 19, 16, 19, F.magmaDeep)
     .outline(INK),
 };

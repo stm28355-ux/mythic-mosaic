@@ -49,7 +49,8 @@ export const MAX_HEIGHT = 2;
 // unlock2＝第2の島の生き物をこの数見つけたら使える、islands＝置ける島（書かなければどちらでも。第16回 案②：島ごとに8つ）
 export const PLACEABLES = Object.freeze([
   { id: 'grass', name: '草', kind: 'ground', ground: 'grass', unlockAt: 0 },
-  { id: 'water', name: '水', kind: 'ground', ground: 'water', unlockAt: 0, islands: [1] },
+  // 水は火の山の島でも、㉛カコウコを見つけると置ける（判定表 第18回：水か砂のうち水）
+  { id: 'water', name: '水', kind: 'ground', ground: 'water', unlockAt: 0 },
   { id: 'sand', name: '砂', kind: 'ground', ground: 'sand', unlockAt: 0, islands: [1] },
   { id: 'hill', name: '丘', kind: 'raise', unlockAt: 3 },
   // 谷：高さを1下げる。第2の島で開くと、第1の島でも使える（第16回 I5）
@@ -71,13 +72,14 @@ export const ISLAND_UNLOCKS = Object.freeze([
   { stage: 2, unlockAt: 10 },
 ]);
 
-// 2つの島（判定表 第15回・第16回）。items＝その島の置く物の並び（8つ）、late＝その島でだけ遅れて開く物（第2の島の生き物の数）、
+// 2つの島（判定表 第15回・第16回）。items＝その島の置く物の並び（8つ。火の山の島は第18回で水を足して9つ）、late＝その島でだけ遅れて開く物（第2の島の生き物の数）、
+// lateBy＝その島でだけ、ある生き物を見つけると開く物、
 // openAt＝渡れるようになる図鑑の数、unlocks＝第2の島が広がる節目（第2の島の生き物の数）
 export const ISLANDS = Object.freeze({
   1: Object.freeze({ name: 'はじまりの島', items: ['grass', 'water', 'sand', 'hill', 'valley', 'rock', 'nest', 'release'] }),
   2: Object.freeze({
-    name: '火の山の島', items: ['grass', 'ash', 'lava', 'hill', 'valley', 'firewood', 'seed', 'release'],
-    late: { hill: 3 }, openAt: 20,
+    name: '火の山の島', items: ['grass', 'ash', 'lava', 'water', 'hill', 'valley', 'firewood', 'seed', 'release'],
+    late: { hill: 3 }, lateBy: { water: 'kakouko' }, openAt: 20,
     unlocks: [{ stage: 1, unlock2: 3 }, { stage: 2, unlock2: 6 }],
   }),
 });
@@ -364,5 +366,47 @@ export const CREATURES = Object.freeze([
     effect: { kind: 'convert', range: 2, from: { ground: 'ash' }, to: 'grass', object: 'flower' },
     text: '2マス先までの灰を、花の咲いた草にする',
     hint: '高い所が炎に囲まれると、翼を広げる',
+  },
+
+  // ---- 火の山の生き物の残り（判定表 第18回）。まず ㉛〜㉟ の5匹 ----
+  {
+    id: 'kakouko', no: 31, name: 'カコウコ', title: '火口の湖', group: '火の山', island: 2,
+    center: { ground: 'lava', height: 0 },
+    around: { match: { minHeight: 1 }, min: 3 },
+    effect: { kind: 'convert', range: 1, from: { ground: 'lava' }, to: 'water', object: null },
+    text: '隣の溶岩をすべて水にする。見つけると火の山の島でも水が置ける',
+    hint: '高い所に囲まれた、熱いくぼみ',
+  },
+  {
+    id: 'kuroishi', no: 32, name: 'クロイシ', title: '黒曜の子', group: '火の山', island: 2,
+    center: { ground: 'lava' },
+    around: { match: { ground: 'water' }, min: 2 },
+    effect: { kind: 'convert', range: 1, from: { ground: 'water' }, to: 'barren', object: 'rock' },
+    text: '隣の水をすべて、岩のある荒れ地にする（冷えて黒い石）',
+    hint: '熱い所が水にふれると',
+  },
+  {
+    id: 'kikorisu', no: 33, name: 'キコリス', title: '木こりのりす', group: '火の山', island: 2,
+    center: { ground: 'grass', object: null },
+    around: { match: { object: 'tree' }, min: 2 },
+    effect: { kind: 'grow', range: 1, from: { object: 'tree' }, object: 'firewood' },
+    text: '隣の木をすべて薪にする（草は残る）',
+    hint: '木のあいだで、斧の音',
+  },
+  {
+    id: 'suminoko', no: 34, name: 'スミノコ', title: '炭の子', group: '火の山', island: 2,
+    center: { ground: 'ash' },
+    around: { match: { object: 'fire' }, min: 2 },
+    effect: { kind: 'convert', range: 1, from: { object: 'fire' }, to: 'ash', object: null },
+    text: '隣の炎を消し、そのマスを灰にする（燃え尽きる）',
+    hint: '燃える所のそばの、冷たい灰',
+  },
+  {
+    id: 'magumaru', no: 35, name: 'マグマル', title: '溶岩の子', group: '火の山', island: 2,
+    center: { ground: 'lava', minHeight: 1 },
+    around: { match: { ground: 'barren' }, min: 3 },
+    effect: { kind: 'convert', range: 1, from: { ground: 'barren' }, to: 'lava' },
+    text: '隣の荒れ地をすべて溶岩にする',
+    hint: '高い所から、何もない所へ流れる',
   },
 ]);
