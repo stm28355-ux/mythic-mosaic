@@ -30,6 +30,7 @@
 | 2026-11-27 | 第22回 工程8：足りない所に足す8匹 https://claude.ai/artifact/S68j3tWUqsWUirgQsMd3R9 | 8匹全部 OK（「これで数もいい感じ」）→ 0.18.0 |
 | 2026-11-27 | 第23回 工程8：足した8匹を遊ぶ https://claude.ai/artifact/2DeF8Ads3ZausSfeHB2TsJ | X1〜X10 全部 OK（組の実績が1匹ずつ増える・次は噂→火の山の問題とスコアアタック→実績）→ 第24回で噂の案 |
 | 2026-11-27 | 第24回 工程8：火の山と巣の生き物の噂 https://claude.ai/artifact/JsBRkYRLqC3qmdYk88XhwC | R1・R2・Q1〜Q22 全部 OK → 0.19.0 |
+| 2026-11-27 | 第25回 工程8：火の山の島の問題とスコアアタックの方針 https://claude.ai/artifact/TAKCoUcoAuMMW4hMnU5ZPc | 判定待ち |
 
 ## 作るときの決めごと
 
