@@ -18,11 +18,15 @@ const playExample = (p) => {
   return chains;
 };
 
-test('問題は1つ以上あり、id がかぶらない。入門が先に並ぶ', () => {
+test('問題は1つ以上あり、id がかぶらない。はじまりの島の問題が先で、島ごとに入門が先に並ぶ', () => {
   assert.ok(PUZZLES.length >= 1);
   assert.equal(new Set(PUZZLES.map((p) => p.id)).size, PUZZLES.length);
-  const firstHard = PUZZLES.findIndex((p) => !p.intro);
-  assert.ok(firstHard === -1 || PUZZLES.slice(firstHard).every((p) => !p.intro));
+  const firstFire = PUZZLES.findIndex((p) => p.island === 2);
+  assert.ok(firstFire === -1 || PUZZLES.slice(firstFire).every((p) => p.island === 2), '火の山の問題はあとにまとまる');
+  for (const list of [PUZZLES.filter((p) => p.island !== 2), PUZZLES.filter((p) => p.island === 2)]) {
+    const firstHard = list.findIndex((p) => !p.intro);
+    assert.ok(firstHard === -1 || list.slice(firstHard).every((p) => !p.intro));
+  }
   assert.ok(PUZZLES.every((p) => p.note), 'どの問題にも、ねらいがある');
   // 狙いの中は段の順（やさしい→むずかしい）。同じ狙いはまとまって並ぶ
   const aims = PUZZLES.map((p) => p.aim).filter((a, i, l) => l.indexOf(a) === i);

@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MAPS } from '../src/data/maps.js';
+import { CREATURES } from '../src/core/creatures.js';
 import { mapBoard, moveScore, starsOf, stockLeft, mapOpen, bestScore } from '../src/core/score.js';
 import { readyShapes, place } from '../src/core/rules.js';
 import { PLACEABLES } from '../src/core/creatures.js';
@@ -18,10 +19,14 @@ test('点：1匹1点、1手の連鎖が3・5・8段に届くと +3・+5・+8（�
   assert.equal(moveScore(steps(3, 1)), 4, '1段に3匹なら3点');
 });
 
-test('地図は5面で、開く数と星はあとの面ほど上がる', () => {
-  assert.equal(MAPS.length, 5);
-  assert.equal(new Set(MAPS.map((m) => m.id)).size, 5);
-  MAPS.forEach((m, i) => { if (i) assert.ok(m.unlockAt > MAPS[i - 1].unlockAt); });
+test('はじまりの島の地図は5面、火の山の地図はそのあと。開く数はあとの面ほど上がる', () => {
+  const one = MAPS.filter((m) => m.island !== 2);
+  const two = MAPS.filter((m) => m.island === 2);
+  assert.equal(one.length, 5);
+  assert.equal(new Set(MAPS.map((m) => m.id)).size, MAPS.length);
+  assert.deepEqual(MAPS, [...one, ...two]);
+  one.forEach((m, i) => { if (i) assert.ok(m.unlockAt > one[i - 1].unlockAt); });
+  two.forEach((m, i) => { if (i) assert.ok(m.unlock2 > two[i - 1].unlock2); });
 });
 
 for (const m of MAPS) {
@@ -36,8 +41,16 @@ for (const m of MAPS) {
     assert.ok(s[0] > 0 && s[0] < s[1] && s[1] < s[2], '星は上がっていく');
     assert.equal(starsOf(m, s[1]), 2);
     assert.equal(starsOf(m, s[1] - 1), 1);
-    assert.equal(mapOpen(m, Array(m.unlockAt).fill('x')), true);
-    assert.equal(mapOpen(m, Array(m.unlockAt - 1).fill('x')), false);
+    if (m.island === 2) {
+      // 火の山の地図は、火の山の生き物の数で開く（判定表 第25回 P3）
+      const fire = CREATURES.filter((c) => c.island === 2).map((c) => c.id);
+      assert.equal(mapOpen(m, fire.slice(0, m.unlock2)), true);
+      assert.equal(mapOpen(m, [...CREATURES.filter((c) => !c.island).map((c) => c.id), ...fire.slice(0, m.unlock2 - 1)]), false);
+      assert.equal(b.island, 2);
+    } else {
+      assert.equal(mapOpen(m, Array(m.unlockAt).fill('x')), true);
+      assert.equal(mapOpen(m, Array(m.unlockAt - 1).fill('x')), false);
+    }
   });
 }
 

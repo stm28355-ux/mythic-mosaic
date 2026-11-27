@@ -14,7 +14,8 @@ export function puzzleBoard(p) {
   const cells = {};
   for (const [q, r] of hexagon(0, 0, PUZZLE_RADIUS[p.size])) cells[key(q, r)] = { q, r, ground: 'barren', height: 0, object: null, creature: null };
   for (const [q, r, ground, height, object, creature] of p.cells) cells[key(q, r)] = { q, r, ground, height, object, creature };
-  return { stage: 0, puzzle: true, cells };
+  // 火の山の島の問題（判定表 第25回 P2）：火の山の8つが置け、火の山の生き物も出る盤
+  return p.island === 2 ? { stage: 0, puzzle: true, island: 2, cells } : { stage: 0, puzzle: true, cells };
 }
 
 export function packBoard(board) {

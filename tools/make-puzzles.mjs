@@ -119,6 +119,34 @@ export const AIMS = {
       { moves: 2, minChain: 7, pick: 'mid' },
     ],
   },
+  // ---- 火の山の島（判定表 第25回。island: 2 の盤で作る。まず入門2問と「火をつなぐ」3問）----
+  hinoko: {
+    order: 101, island: 2, title: '火をつける', want: 1, intro: true, maxRatio: 0.2,
+    note: '溶岩を置いてヒノコを呼ぶ。ヒノコがつけた炎のそばで、フイゴが風を吹く',
+    aim: 'fuigo',
+    allow: ['hinoko', 'fuigo'],
+    items: ['lava'], build: ['firewood', 'lava', 'ash', 'grass'], moves: 1, size: 19, minChain: 2,
+  },
+  haikusa: {
+    order: 102, island: 2, title: '灰から草へ', want: 1, intro: true, maxRatio: 0.2,
+    note: '灰を置いてハイモグラを呼ぶ。ハイモグラが広げた草のそばの、種のある灰にタネボウズが来る',
+    aim: 'tanebouzu',
+    allow: ['haimogura', 'tanebouzu', 'kokedama'],
+    items: ['ash'], build: ['ash', 'grass', 'seed'], moves: 1, size: 19, minChain: 2,
+  },
+  hibana: {
+    order: 110, island: 2, title: '火をつなぐ',
+    allow: ['hinoko', 'fuigo', 'homuradori', 'hibachi', 'suminoko', 'haimogura', 'kemuri', 'hinoyamanushi', 'tsukisusu', 'yamaokoshi', 'nobi', 'minori', 'tanebouzu', 'kokedama'],
+    items: ['firewood', 'lava', 'hill'], build: ['firewood', 'lava', 'ash', 'hill', 'grass'], size: 19,
+    tiers: [
+      { moves: 2, minChain: 3, easy: true, maxRatio: 0.2, pick: 'easy', aim: 'fuigo',
+        note: '薪を並べてヒノコに火をつけさせ、炎のそばでフイゴに風を吹かせる' },
+      { moves: 2, minChain: 3, pick: 'mid', aim: 'homuradori', plant: true,
+        note: '高い所のまわりに炎を3つそろえて、ホムラドリを呼ぶ' },
+      { moves: 3, minChain: 4, pick: 'mid', aim: 'hinoyamanushi', plant: true,
+        note: '高い所の炎のまわりに生き物を4匹集めて、ヒノヤマヌシを呼ぶ' },
+    ],
+  },
   kazenoko: {
     order: 90, title: '丘の風', want: 3,
     note: 'カゼノコの「2マス先まで草」を連鎖の途中に入れる',
@@ -142,7 +170,7 @@ const busyCount = (board) => Object.values(board.cells).filter((c) => c.ground !
 function makeBoard(C, rng, genCatalog) {
   const cells = {};
   for (const [q, r] of hexagon(0, 0, PUZZLE_RADIUS[C.size])) cells[key(q, r)] = { q, r, ground: 'barren', height: 0, object: null, creature: null };
-  let board = { stage: 0, cells };
+  let board = C.island === 2 ? { stage: 0, island: 2, cells } : { stage: 0, cells };
   const turns = (20 + rng.int(40)) * (C.size / 19);
   const tools = C.build ?? (C.intro ? [...new Set([...C.items, 'grass', 'water', 'sand'])] : C.items);
   for (let t = 0; t < turns; t++) {
@@ -306,7 +334,7 @@ function report(C, g, picked) {
 const toPuzzle = (name, C, f, id, title) => ({
   id, aim: name, title, note: C.note, size: C.size, items: f.items, target: f.all.best,
   appear: [...f.all.appear].sort(), cells: packBoard(f.board), example: f.all.example,
-  ...(C.tier ? { tier: C.tier } : {}),
+  ...(C.tier ? { tier: C.tier } : {}), ...(C.island === 2 ? { island: 2 } : {}),
 });
 
 // 問題を src/data/puzzles.js に入れる（同じ id は置き換え）。狙いの order・段の順に並べ、例の置き方で届くかを確かめる

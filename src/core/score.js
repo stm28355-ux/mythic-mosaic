@@ -4,6 +4,7 @@
 //   （試作でくらべた「上限付きの足し算」＝n段目に n点・4段目からは4点、は使わない）
 // 地図は src/data/maps.js。ここには、地図から盤を作る・点を数える・星を数える関数を置く。
 import { key } from './hex.js';
+import { island2Count } from './rules.js';
 
 // 地図の行の文字 → マス（'.' は地図の外）
 export const MAP_CODES = Object.freeze({
@@ -17,6 +18,12 @@ export const MAP_CODES = Object.freeze({
   r: { ground: 'barren', object: 'rock' },
   t: { ground: 'grass', object: 'tree' },
   S: { ground: 'sand', height: 1 },
+  // 火の山の島の地図（判定表 第25回 P5）
+  a: { ground: 'ash' },
+  A: { ground: 'ash', height: 1 },
+  l: { ground: 'lava' },
+  L: { ground: 'lava', height: 1 },
+  f: { ground: 'barren', object: 'firewood' },
 });
 
 // 地図の盤。rows は (0,0) を中心にした半径4の六角の行（r = -4 … 4、上から）。行の文字数はその行のマスの数
@@ -36,7 +43,7 @@ export function mapBoard(map) {
       cells[key(q, r)] = { q, r, ground: 'barren', height: 0, object: null, creature: null, ...code };
     });
   });
-  return { stage: 0, puzzle: true, cells };
+  return map.island === 2 ? { stage: 0, puzzle: true, island: 2, cells } : { stage: 0, puzzle: true, cells };
 }
 
 export const SCORE_TEXT = '出た生き物1匹に1点。1手の連鎖が3・5・8段に届くと +3・+5・+8';
@@ -65,5 +72,7 @@ export const bestScore = (v) => (typeof v === 'number' ? v : v?.b ?? 0);
 
 // 地図が開いているか：見つけた生き物の数
 export function mapOpen(map, found) {
+  // 火の山の地図は火の山の生き物の数で開く（判定表 第25回 P3）
+  if (map.unlock2 !== undefined) return island2Count(found) >= map.unlock2;
   return found.length >= map.unlockAt;
 }

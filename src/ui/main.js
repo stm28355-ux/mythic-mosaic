@@ -148,7 +148,7 @@ function renderMode() {
   $('cross').hidden = Boolean(pz || sa) || !mayCross();
   $('cross').textContent = `⇄ ${ISLANDS[state.island === 2 ? 1 : 2].name}へ`;
   $('cross').title = `今は${ISLANDS[state.island].name}。押すと渡る（盤はそれぞれ残る）`;
-  document.body.dataset.island = String(pz || sa ? 1 : state.island);
+  document.body.dataset.island = String(viewBoard().island === 2 ? 2 : 1);
   if (sa) { renderScoreBar(); renderScoreCast(); }
   if (!pz) return;
   const p = pz.p;
@@ -461,9 +461,11 @@ async function onPuzzleCell(k) {
 function renderPuzzleList() {
   const groups = [];
   for (const p of PUZZLES) {
-    const id = p.intro ? 'intro' : p.aim;
+    // 火の山の島の問題は「火の山・」の組（判定表 第25回 P1）。入門も火の山は別の組
+    const fire = p.island === 2;
+    const id = `${fire ? 'fire-' : ''}${p.intro ? 'intro' : p.aim}`;
     let g = groups.find((x) => x.id === id);
-    if (!g) groups.push(g = { id, name: p.intro ? '入門' : p.title.replace(/ \d+$/, ''), list: [] });
+    if (!g) groups.push(g = { id, name: `${fire ? '火の山・' : ''}${p.intro ? '入門' : p.title.replace(/ \d+$/, '')}`, list: [] });
     g.list.push(p);
   }
   const isOpen = (p) => TEST_OPEN || puzzleOpen(p, state.found);
@@ -601,7 +603,7 @@ function scoreGroup() {
     const li = document.createElement('li');
     if (!isOpenMap(m)) {
       li.className = 'locked';
-      li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>図鑑で${m.unlockAt}匹見つけると開く</p></div>`;
+      li.innerHTML = `<span class="ach-mark">？</span><div><b>？？？</b><p>${m.unlock2 !== undefined ? `火の山の生き物を${m.unlock2}匹見つけると開く` : `図鑑で${m.unlockAt}匹見つけると開く`}</p></div>`;
       return li;
     }
     const best = bestScore(state.best[m.id]);

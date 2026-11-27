@@ -85,4 +85,21 @@ export const MAPS = Object.freeze([
     stock: { grass: 6, water: 6, sand: 5, hill: 3, rock: 2 },
     stars: [65, 118, 155],
   },
+  // ---- 火の山の島の地図（判定表 第25回 P5。火の山の生き物の数で開く。a 灰・A 高さ1の灰・l 溶岩・L 高さ1の溶岩・f 薪）----
+  {
+    id: 'fumoto', title: '火の山のふもと', island: 2, unlock2: 6,
+    rows: [
+      'oo1oo',
+      'oaoooo',
+      'oooAooo',
+      'ooaoofoo',
+      'o2oolooAo',
+      'oofoooao',
+      'ooo1ooo',
+      'oaoooo',
+      'oo2oo',
+    ],
+    stock: { ash: 4, lava: 3, firewood: 4, hill: 2, grass: 2 },
+    stars: [73, 89, 151],
+  },
 ]);
