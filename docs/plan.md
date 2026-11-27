@@ -40,7 +40,7 @@
 | 2026-11-27 | 第32回 工程9：画面の直しを触って確かめる https://claude.ai/artifact/NyvjcDmPY3DBypoF3YXUaQ | V5・V6 OK。V1 直す：挑戦から別の挑戦へ移れるように。V2 直す：図鑑の外を押したら閉じる。V3 直す：実績の区切りが分かりにくい、枠を。V4 直す：遊び方の「10.」が「0.」に切れていた。人の頼み：置く物のタイルが条件の2行でつぶれる → 条件のある物はタイルを出さず条件だけ → 0.25.0 |
 | 2026-11-27 | 第33回 工程9：第32回の直し https://claude.ai/artifact/AsGsn1AreZURRJSnppCNrw | W1〜W5 全部 OK。ふり返りを書いて 1.0.0 |
 | 2026-11-27 | 第34回 1.1.0：島の飾りとスコアアタックの★ https://claude.ai/artifact/8G1hpRHBEeEEap1N61hjJ8 | K1〜K5 全部 OK |
-| 2026-11-27 | 第35回 1.2.0：称号と図鑑の枠 https://claude.ai/artifact/71dyxrr7nXHxpYT9cqZEJ5 | 判定待ち |
+| 2026-11-27 | 第35回 1.2.0：称号と図鑑の枠 https://claude.ai/artifact/71dyxrr7nXHxpYT9cqZEJ5 | 全部 OK |
 
 ## 作るときの決めごと
 
