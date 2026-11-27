@@ -33,7 +33,8 @@
 | 2026-11-27 | 第25回 工程8：火の山の島の問題とスコアアタックの方針 https://claude.ai/artifact/TAKCoUcoAuMMW4hMnU5ZPc | P1〜P6・A0〜A5 全部 OK → 0.20.0 で入門2問・火をつなぐ3問・地図1面 |
 | 2026-11-27 | 第26回 工程8：火の山の問題5問と地図1面を遊ぶ https://claude.ai/artifact/YDVi4kTd86H43pG65sRZTP | F1〜F8 全部 OK → 0.21.0 で残り12問と地図2面 |
 | 2026-11-27 | 第27回 工程8：火の山の問題の残り12問と地図2面 https://claude.ai/artifact/WqeucaurdQGpwFHSoHdzzC | G1〜G8 全部 OK（出てくる生き物の数も今のまま、次は実績） |
-| 2026-11-27 | 第28回 工程8：火の山の島の実績 https://claude.ai/artifact/YHXAykUnsSowjr7maciKHA | E1・E2・H1〜H12 全部 OK → 0.22.0 |
+| 2026-11-27 | 第28回 工程8：火の山の島の実績 https://claude.ai/artifact/YHXAykUnsSowjr7maciKHA | E1・E2・H1〜H12 全部 OK → 0.22.0。工程8 済 |
+| 2026-11-27 | 第29回 工程9：最後の調整でやること https://claude.ai/artifact/BQHf8feJcYn14bRqT8ZJ6E | 判定待ち |
 
 ## 作るときの決めごと
 
